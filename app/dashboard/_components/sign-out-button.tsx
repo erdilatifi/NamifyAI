@@ -17,7 +17,7 @@ export default function SignOutButton() {
       onClick={async () => {
         setIsLoading(true);
         try {
-          await signOut();
+          await signOut({ redirect: false });
         } finally {
           router.push("/login");
           router.refresh();

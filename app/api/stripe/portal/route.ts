@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
   const stripe = getStripe();
 
-  const session = await auth.api.getSession({ headers: req.headers });
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "No customer" }, { status: 400 });
   }
 
-  const baseUrl = env.BETTER_AUTH_URL;
+  const baseUrl = env.NEXT_PUBLIC_APP_URL;
 
   const portal = await stripe.billingPortal.sessions.create({
     customer: sub.stripeCustomerId,

@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
-  const session = await auth.api.getSession({ headers: req.headers });
+  const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ user: null }, { status: 200 });
   }

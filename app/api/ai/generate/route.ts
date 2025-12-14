@@ -25,7 +25,7 @@ const FREE_LIMIT = 20;
 const PRO_LIMIT = 200;
 
 export async function POST(req: Request) {
-  const session = await auth.api.getSession({ headers: req.headers });
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

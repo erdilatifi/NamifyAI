@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { signUp } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { signIn } from "@/lib/auth-client";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,27 +18,44 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-zinc-50">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Create your NamifyAI account</h1>
-        <p className="mt-2 text-sm text-zinc-600">Start generating brandable names in seconds.</p>
-
-        <form
-          className="mt-8 space-y-4"
+        <Card>
+          <CardHeader>
+            <CardTitle>Create your NamifyAI account</CardTitle>
+            <CardDescription>Start generating brandable names in seconds.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="space-y-4"
           onSubmit={async (e) => {
             e.preventDefault();
             setError(null);
             setIsLoading(true);
             try {
-              const res = await signUp.email({
-                name,
+              const created = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, password }),
+              });
+
+              if (!created.ok) {
+                const json = await created.json().catch(() => null);
+                setError(json?.error ?? "Unable to sign up");
+                return;
+              }
+
+              const res = await signIn("credentials", {
+                redirect: false,
                 email,
                 password,
               });
+
               if (res?.error) {
-                setError(res.error.message ?? "Unable to sign up");
+                setError(res.error ?? "Unable to sign in");
                 return;
               }
+
               router.push("/dashboard");
             } catch {
               setError("Unable to sign up");
@@ -43,61 +63,76 @@ export default function RegisterPage() {
               setIsLoading(false);
             }
           }}
-        >
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Name</label>
-            <input
-              className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-400"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              type="text"
-              autoComplete="name"
-              required
-            />
-          </div>
+            >
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Name</label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  type="text"
+                  autoComplete="name"
+                  required
+                />
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
-            <input
-              className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-400"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              autoComplete="email"
-              required
-            />
-          </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  autoComplete="email"
+                  required
+                />
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Password</label>
-            <input
-              className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-400"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-            />
-          </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Password</label>
+                <Input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                />
+              </div>
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-          <button
-            disabled={isLoading}
-            className="h-11 w-full rounded-md bg-black text-sm font-medium text-white disabled:opacity-60"
-            type="submit"
-          >
-            {isLoading ? "Creating account..." : "Create account"}
-          </button>
-        </form>
+              <Button disabled={isLoading} className="w-full" type="submit">
+                {isLoading ? "Creating account..." : "Create account"}
+              </Button>
 
-        <p className="mt-6 text-sm text-zinc-600">
-          Already have an account?{" "}
-          <Link className="font-medium text-black" href="/login">
-            Log in
-          </Link>
-        </p>
+              <Button
+                type="button"
+                disabled={isLoading}
+                variant="outline"
+                className="w-full"
+                onClick={async () => {
+                  setError(null);
+                  setIsLoading(true);
+                  try {
+                    await signIn("google", { callbackUrl: "/dashboard" });
+                  } catch {
+                    setError("Unable to sign in with Google");
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              >
+                Continue with Google
+              </Button>
+            </form>
+
+            <div className="mt-4 text-sm text-zinc-600">
+              Already have an account?{" "}
+              <Link className="font-medium text-black" href="/login">
+                Log in
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

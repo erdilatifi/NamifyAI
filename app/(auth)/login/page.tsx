@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { signIn } from "@/lib/auth-client";
 
 export default function LoginPage() {
@@ -14,24 +17,28 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-zinc-50">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Log in to NamifyAI</h1>
-        <p className="mt-2 text-sm text-zinc-600">Welcome back. Generate and save brandable names.</p>
-
-        <form
-          className="mt-8 space-y-4"
+        <Card>
+          <CardHeader>
+            <CardTitle>Log in to NamifyAI</CardTitle>
+            <CardDescription>Welcome back. Generate and save brandable names.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="space-y-4"
           onSubmit={async (e) => {
             e.preventDefault();
             setError(null);
             setIsLoading(true);
             try {
-              const res = await signIn.email({
+              const res = await signIn("credentials", {
+                redirect: false,
                 email,
                 password,
               });
               if (res?.error) {
-                setError(res.error.message ?? "Unable to sign in");
+                setError(res.error ?? "Unable to sign in");
                 return;
               }
               router.push("/dashboard");
@@ -41,48 +48,69 @@ export default function LoginPage() {
               setIsLoading(false);
             }
           }}
-        >
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
-            <input
-              className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-400"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              autoComplete="email"
-              required
-            />
-          </div>
+            >
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  autoComplete="email"
+                  required
+                />
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Password</label>
-            <input
-              className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-400"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Password</label>
+                <Input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-          <button
-            disabled={isLoading}
-            className="h-11 w-full rounded-md bg-black text-sm font-medium text-white disabled:opacity-60"
-            type="submit"
-          >
-            {isLoading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
+              <Button disabled={isLoading} className="w-full" type="submit">
+                {isLoading ? "Signing in..." : "Sign in"}
+              </Button>
 
-        <p className="mt-6 text-sm text-zinc-600">
-          Don&apos;t have an account?{" "}
-          <Link className="font-medium text-black" href="/register">
-            Create one
-          </Link>
-        </p>
+              <Button
+                type="button"
+                disabled={isLoading}
+                variant="outline"
+                className="w-full"
+                onClick={async () => {
+                  setError(null);
+                  setIsLoading(true);
+                  try {
+                    await signIn("google", { callbackUrl: "/dashboard" });
+                  } catch {
+                    setError("Unable to sign in with Google");
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              >
+                Continue with Google
+              </Button>
+            </form>
+
+            <div className="mt-4 flex flex-col gap-2 text-sm text-zinc-600">
+              <Link className="font-medium text-black" href="/forgot-password">
+                Forgot your password?
+              </Link>
+              <div>
+                Don&apos;t have an account?{" "}
+                <Link className="font-medium text-black" href="/register">
+                  Create one
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
   const stripe = getStripe();
 
-  const session = await auth.api.getSession({ headers: req.headers });
+  const session = await auth();
   if (!session?.user?.id || !session.user.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     });
   }
 
-  const baseUrl = env.BETTER_AUTH_URL;
+  const baseUrl = env.NEXT_PUBLIC_APP_URL;
 
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "subscription",
