@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      session[]
+  accounts      account[]
+
+  generatedNames GeneratedName[]
+  favorites      Favorite[]
+  subscription   Subscription?
+  usageTracking  UsageTracking[]
+
+  @@index([email])
+}
+
+model session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user user @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user user @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([providerId, accountId])
+}
+
+model verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@index([expiresAt])
+}
+
+model GeneratedName {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String
+  industry    String
+  tone        String
+  keywords    String?
+
+  createdAt   DateTime @default(now())
+
+  user user @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favorites Favorite[]
+
+  @@index([userId, createdAt])
+}
+
+model Favorite {
+  id              String   @id @default(cuid())
+  userId          String
+  generatedNameId String
+  createdAt       DateTime @default(now())
+
+  user          user          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generatedName GeneratedName @relation(fields: [generatedNameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, generatedNameId])
+  @@index([userId, createdAt])
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  userId                String             @unique
+  plan                  Plan               @default(FREE)
+  status                SubscriptionStatus @default(ACTIVE)
+
+  stripeCustomerId      String?            @unique
+  stripeSubscriptionId  String?            @unique
+  stripePriceId         String?
+  currentPeriodEnd      DateTime?
+
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  user user @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UsageTracking {
+  id          String   @id @default(cuid())
+  userId      String
+  periodStart DateTime
+  periodEnd   DateTime
+  usedCredits Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user user @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodStart, periodEnd])
+  @@index([userId, periodStart])
+}
