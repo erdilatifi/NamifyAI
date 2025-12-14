@@ -4,6 +4,11 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
 type GenerateInput = {
   description: string;
   industry: string;
@@ -129,14 +134,16 @@ export default function GeneratePage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold tracking-tight">Generate business names</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Describe your business and get 10–20 brandable name ideas.
-        </p>
-
-        <form
-          className="mt-6 grid gap-4"
+      <Card>
+        <CardHeader>
+          <CardTitle>Generate business names</CardTitle>
+          <CardDescription>
+            Describe your business and get 10–20 brandable name ideas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="grid gap-4"
           onSubmit={(e) => {
             e.preventDefault();
             generateMutation.mutate({
@@ -146,137 +153,129 @@ export default function GeneratePage() {
               keywords: keywords.length ? keywords : undefined,
             });
           }}
-        >
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Business description</label>
-            <textarea
-              className="min-h-24 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
+          >
             <div className="grid gap-2">
-              <label className="text-sm font-medium">Industry</label>
-              <input
-                className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-400"
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                required
+              <label className="text-sm font-medium">Business description</label>
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} required />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Industry</label>
+                <Input value={industry} onChange={(e) => setIndustry(e.target.value)} required />
+              </div>
+
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Tone</label>
+                <select
+                  className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                >
+                  <option value="professional">Professional</option>
+                  <option value="playful">Playful</option>
+                  <option value="bold">Bold</option>
+                  <option value="luxury">Luxury</option>
+                  <option value="minimal">Minimal</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Keywords (optional)</label>
+              <Input
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                placeholder="e.g. rapid, cloud, finance"
               />
             </div>
 
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Tone</label>
-              <select
-                className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-400"
-                value={tone}
-                onChange={(e) => setTone(e.target.value)}
-              >
-                <option value="professional">Professional</option>
-                <option value="playful">Playful</option>
-                <option value="bold">Bold</option>
-                <option value="luxury">Luxury</option>
-                <option value="minimal">Minimal</option>
-              </select>
-            </div>
-          </div>
+            <Button disabled={generateMutation.isPending} type="submit">
+              {generateMutation.isPending ? "Generating..." : "Generate"}
+            </Button>
 
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Keywords (optional)</label>
-            <input
-              className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-400"
-              value={keywords}
-              onChange={(e) => setKeywords(e.target.value)}
-              placeholder="e.g. rapid, cloud, finance"
-            />
-          </div>
+            {generateMutation.isError ? (
+              <p className="text-sm text-red-600">Unable to generate names right now.</p>
+            ) : null}
+          </form>
+        </CardContent>
+      </Card>
 
-          <button
-            disabled={generateMutation.isPending}
-            className="h-11 rounded-md bg-black px-4 text-sm font-medium text-white disabled:opacity-60"
-            type="submit"
-          >
-            {generateMutation.isPending ? "Generating..." : "Generate"}
-          </button>
-
-          {generateMutation.isError ? (
-            <p className="text-sm text-red-600">Unable to generate names right now.</p>
-          ) : null}
-        </form>
-      </div>
-
-      <div className="rounded-xl bg-white p-6 shadow-sm">
-        <div className="text-sm font-medium">Suggestions</div>
-        {actionError ? <p className="mt-2 text-sm text-red-600">{actionError}</p> : null}
-        {limitReached ? (
-          <div className="mt-3 rounded-md border border-zinc-200 bg-zinc-50 p-4">
-            <div className="text-sm font-medium">Upgrade to keep generating</div>
-            <div className="mt-1 text-sm text-zinc-600">
-              Upgrade to Pro to unlock a higher monthly generation limit.
-            </div>
-            <div className="mt-3">
-              <Link
-                className="inline-flex h-10 items-center rounded-md bg-black px-4 text-sm font-medium text-white"
-                href="/dashboard/billing"
-              >
-                Upgrade to Pro
-              </Link>
-            </div>
-          </div>
-        ) : null}
-        {results.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">No results yet.</p>
-        ) : (
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {results.map((r) => (
-              <div key={r.name} className="rounded-lg border border-zinc-100 p-4">
-                <div className="font-semibold">{r.name}</div>
-                {r.tagline ? <div className="mt-1 text-sm text-zinc-600">{r.tagline}</div> : null}
-                {r.domainHint ? (
-                  <div className="mt-1 text-xs text-zinc-500">{r.domainHint}</div>
-                ) : null}
-                <div className="mt-3 flex gap-2">
-                  <button
-                    className="h-9 rounded-md border border-zinc-200 px-3 text-sm"
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(r.name);
-                    }}
-                    type="button"
-                  >
-                    Copy
-                  </button>
-                  <button
-                    className="h-9 rounded-md border border-zinc-200 px-3 text-sm"
-                    disabled={saveMutation.isPending || Boolean(savedIdsByName[r.name])}
-                    onClick={() => {
-                      setActionError(null);
-                      saveMutation.mutate({ name: r.name });
-                    }}
-                    type="button"
-                  >
-                    {savedIdsByName[r.name] ? "Saved" : "Save"}
-                  </button>
-                  <button
-                    className="h-9 rounded-md border border-zinc-200 px-3 text-sm"
-                    disabled={favoriteMutation.isPending}
-                    onClick={() => {
-                      setActionError(null);
-                      const next = !(favoritedByName[r.name] ?? false);
-                      favoriteMutation.mutate({ name: r.name, favorite: next });
-                    }}
-                    type="button"
-                  >
-                    {favoritedByName[r.name] ? "Unfavorite" : "Favorite"}
-                  </button>
-                </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Suggestions</CardTitle>
+          <CardDescription>Save and favorite your best ideas.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {actionError ? <p className="text-sm text-red-600">{actionError}</p> : null}
+          {limitReached ? (
+            <div className="mt-3 rounded-md border border-zinc-200 bg-zinc-50 p-4">
+              <div className="text-sm font-medium">Upgrade to keep generating</div>
+              <div className="mt-1 text-sm text-zinc-600">
+                Upgrade to Pro to unlock a higher monthly generation limit.
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <div className="mt-3">
+                <Button asChild>
+                  <Link href="/dashboard/billing">Upgrade to Pro</Link>
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {results.length === 0 ? (
+            <p className="mt-2 text-sm text-zinc-500">No results yet.</p>
+          ) : (
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {results.map((r) => (
+                <div key={r.name} className="rounded-lg border border-zinc-200 p-4">
+                  <div className="font-semibold">{r.name}</div>
+                  {r.tagline ? <div className="mt-1 text-sm text-zinc-600">{r.tagline}</div> : null}
+                  {r.domainHint ? (
+                    <div className="mt-1 text-xs text-zinc-500">{r.domainHint}</div>
+                  ) : null}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(r.name);
+                      }}
+                      type="button"
+                    >
+                      Copy
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={saveMutation.isPending || Boolean(savedIdsByName[r.name])}
+                      onClick={() => {
+                        setActionError(null);
+                        saveMutation.mutate({ name: r.name });
+                      }}
+                      type="button"
+                    >
+                      {savedIdsByName[r.name] ? "Saved" : "Save"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={favoriteMutation.isPending}
+                      onClick={() => {
+                        setActionError(null);
+                        const next = !(favoritedByName[r.name] ?? false);
+                        favoriteMutation.mutate({ name: r.name, favorite: next });
+                      }}
+                      type="button"
+                    >
+                      {favoritedByName[r.name] ? "Unfavorite" : "Favorite"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

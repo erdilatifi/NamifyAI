@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth-client";
 
 export default function SignOutButton() {
@@ -10,10 +11,11 @@ export default function SignOutButton() {
   const [isLoading, setIsLoading] = useState(false);
 
   return (
-    <button
+    <Button
       type="button"
       disabled={isLoading}
-      className="mt-4 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-left text-sm hover:bg-zinc-50 disabled:opacity-60"
+      variant="outline"
+      className="mt-4 w-full justify-start"
       onClick={async () => {
         setIsLoading(true);
         try {
@@ -26,6 +28,6 @@ export default function SignOutButton() {
       }}
     >
       {isLoading ? "Signing out..." : "Sign out"}
-    </button>
+    </Button>
   );
 }
