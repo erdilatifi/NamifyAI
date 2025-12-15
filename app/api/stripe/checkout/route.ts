@@ -88,8 +88,8 @@ export async function POST(req: Request) {
         metadata: { userId },
       },
       metadata: { userId },
-      success_url: `${baseUrl}/dashboard/billing?success=1`,
-      cancel_url: `${baseUrl}/dashboard/billing?canceled=1`,
+      success_url: `${baseUrl}/payment/success`,
+      cancel_url: `${baseUrl}/payment/cancel`,
     });
 
     return NextResponse.json({ url: checkoutSession.url });

@@ -1,255 +1,306 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { ArrowRight, Check, Sparkles } from "lucide-react";
+
+/* ---------------- animation presets ---------------- */
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+/* ---------------- small UI helpers ---------------- */
+
+function Badge({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-zinc-300 backdrop-blur">
+      <Sparkles className="h-3.5 w-3.5 text-indigo-300" />
+      {children}
+    </div>
+  );
+}
+
+function Bullet({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2 text-sm text-zinc-200">
+      <Check className="mt-0.5 h-4 w-4 text-indigo-300" />
+      <span className="leading-6">{children}</span>
+    </div>
+  );
+}
+
+/* ---------------- page ---------------- */
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
-      <header className="sticky top-0 z-10 border-b border-zinc-100 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
-            NamifyAI
-          </Link>
-          <nav className="flex items-center gap-3 text-sm">
-            <Link className="hidden text-zinc-600 hover:text-zinc-950 sm:block" href="#pricing">
-              Pricing
-            </Link>
-            <Link className="hidden text-zinc-600 hover:text-zinc-950 sm:block" href="#faq">
-              FAQ
-            </Link>
-            <Link className="rounded-md border border-zinc-200 px-3 py-2 hover:bg-zinc-50" href="/login">
-              Log in
-            </Link>
-            <Link className="rounded-md bg-black px-3 py-2 text-white hover:bg-zinc-900" href="/register">
-              Start free
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className="relative min-h-screen overflow-hidden bg-[#060606] pt-24 text-zinc-50">
+      {/* ---------- premium background ---------- */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-indigo-500/20 blur-[140px]" />
+        <div className="absolute top-1/3 left-0 h-[420px] w-[420px] bg-violet-500/10 blur-[140px]" />
+        <div className="absolute top-1/4 right-0 h-[420px] w-[420px] bg-blue-500/10 blur-[140px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_60%)]" />
 
-      <main>
-        <section className="relative overflow-hidden">
-          <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-24">
-            <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-              <div>
-                <p className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-700">
-                  AI business name generator for founders
-                </p>
-                <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-                  Brandable business names in seconds.
-                </h1>
-                <p className="mt-4 text-base leading-7 text-zinc-600 sm:text-lg">
-                  Describe your idea, pick a tone, add keywords — NamifyAI generates 10–20 startup-ready names you can save and revisit.
-                </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <Link className="h-11 rounded-md bg-black px-5 text-sm font-medium text-white hover:bg-zinc-900 inline-flex items-center justify-center" href="/register">
-                    Generate names for free
-                  </Link>
-                  <Link className="h-11 rounded-md border border-zinc-200 px-5 text-sm font-medium hover:bg-zinc-50 inline-flex items-center justify-center" href="#how">
-                    See how it works
-                  </Link>
-                </div>
-                <div className="mt-6 text-xs text-zinc-500">
-                  Free tier included. Upgrade any time.
-                </div>
-              </div>
+        {/* AuthKit-inspired grid + vignette */}
+        <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(to_right,rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:64px_64px]" />
+        <div className="absolute inset-0 opacity-[0.05] [background-image:linear-gradient(to_right,rgba(255,255,255,0.10)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.10)_1px,transparent_1px)] [background-size:256px_256px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(0,0,0,0.78)_100%)]" />
 
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 shadow-sm">
-                <div className="text-sm font-medium">Example output</div>
-                <div className="mt-4 grid gap-3">
-                  {[
-                    { name: "Ledgerly", note: "Fintech • Professional" },
-                    { name: "Sproutlane", note: "Food • Playful" },
-                    { name: "ArcNimbus", note: "Cloud • Bold" },
-                    { name: "LumenCraft", note: "Design • Minimal" },
-                  ].map((x) => (
-                    <div key={x.name} className="flex items-center justify-between rounded-xl bg-white px-4 py-3">
-                      <div>
-                        <div className="font-semibold">{x.name}</div>
-                        <div className="text-xs text-zinc-500">{x.note}</div>
-                      </div>
-                      <div className="text-xs text-zinc-400">.com hint</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+        {/* faint crosshair lines */}
+        <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-white/5" />
+        <div className="absolute top-1/3 left-0 h-px w-full bg-white/5" />
+      </div>
+
+      <main className="relative">
+        {/* ================= HERO ================= */}
+        <section className="relative">
+          <div className="mx-auto max-w-6xl px-6 pb-20 pt-20">
+            <motion.div
+              variants={container}
+              initial="hidden"
+              animate="show"
+              className="mx-auto max-w-3xl text-center"
+            >
+              <motion.div variants={item}>
+                <Badge>Premium AI naming for modern founders</Badge>
+              </motion.div>
+
+              <motion.h1
+                variants={item}
+                className="mt-8 text-balance text-5xl font-semibold tracking-[-0.03em] sm:text-7xl"
+              >
+                <span className="bg-gradient-to-r from-indigo-300 via-violet-300 to-blue-300 bg-clip-text text-transparent">
+                  Brandable business names
+                </span>{" "}
+                in seconds.
+              </motion.h1>
+
+              <motion.p
+                variants={item}
+                className="mx-auto mt-6 max-w-xl text-base leading-7 text-zinc-300 sm:text-lg"
+              >
+                Describe your idea and instantly generate clean, memorable names with
+                domain hints — built for fast naming sprints.
+              </motion.p>
+
+              <motion.div
+                variants={item}
+                className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
+              >
+                <Link
+                  href="/register"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-indigo-500 via-violet-500 to-blue-500 px-7 text-sm font-medium text-white shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_20px_60px_-30px_rgba(99,102,241,0.8)] transition hover:brightness-110"
+                >
+                  Start free
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+
+                <Link
+                  href="#pricing"
+                  className="inline-flex h-11 items-center justify-center rounded-md border border-white/10 bg-white/5 px-7 text-sm font-medium text-zinc-100 backdrop-blur transition hover:bg-white/10"
+                >
+                  View pricing
+                </Link>
+              </motion.div>
+
+              <motion.div
+                variants={item}
+                className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-400"
+              >
+                <span>1,000+ founders</span>
+                <span className="h-1 w-1 rounded-full bg-zinc-500" />
+                <span>10,000+ names generated</span>
+                <span className="h-1 w-1 rounded-full bg-zinc-500" />
+                <span>Results in under 3s</span>
+              </motion.div>
+            </motion.div>
           </div>
         </section>
 
-        <section className="border-t border-zinc-100 bg-white">
-          <div className="mx-auto w-full max-w-6xl px-6 py-14">
-            <div className="grid gap-6 md:grid-cols-3">
+        {/* ================= FEATURES ================= */}
+        <section className="border-t border-white/10">
+          <div className="mx-auto max-w-6xl px-6 py-20">
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="text-sm text-indigo-200">Built for clarity</div>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                Everything you need to pick a name confidently
+              </h2>
+              <p className="mt-4 text-sm leading-6 text-zinc-300">
+                No clutter. No distractions. Just fast, focused naming.
+              </p>
+            </div>
+
+            <div className="mt-14 grid gap-6 md:grid-cols-3">
               {[
                 {
-                  title: "Brandable by design",
-                  desc: "Short, pronounceable, and memorable—optimized for modern startups.",
+                  title: "Brandable by default",
+                  desc: "Short, pronounceable names tuned for modern startups.",
                 },
                 {
-                  title: "Save & favorite",
-                  desc: "Keep your best ideas, favorite the winners, and revisit later.",
+                  title: "Save & shortlist",
+                  desc: "Favorite the best ideas and compare them clearly.",
                 },
                 {
-                  title: "Usage controls",
-                  desc: "Free tier with limits. Pro plan for serious naming sprints.",
+                  title: "Domain guidance",
+                  desc: "See likely available domains and next steps instantly.",
                 },
               ].map((f) => (
-                <div key={f.title} className="rounded-2xl border border-zinc-200 p-6">
-                  <div className="text-sm font-semibold">{f.title}</div>
-                  <div className="mt-2 text-sm leading-6 text-zinc-600">{f.desc}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="how" className="border-t border-zinc-100 bg-zinc-50">
-          <div className="mx-auto w-full max-w-6xl px-6 py-16">
-            <h2 className="text-2xl font-semibold tracking-tight">How it works</h2>
-            <div className="mt-8 grid gap-6 md:grid-cols-3">
-              {[
-                {
-                  step: "1",
-                  title: "Describe your business",
-                  desc: "Tell us what you do and who you serve.",
-                },
-                {
-                  step: "2",
-                  title: "Pick tone + keywords",
-                  desc: "Professional, playful, bold—your brand voice matters.",
-                },
-                {
-                  step: "3",
-                  title: "Generate & shortlist",
-                  desc: "Get 10–20 names, then save and favorite the best.",
-                },
-              ].map((s) => (
-                <div key={s.step} className="rounded-2xl bg-white p-6 shadow-sm">
-                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
-                    {s.step}
+                <div
+                  key={f.title}
+                  className="relative rounded-2xl border border-white/10 bg-white/[0.06] p-6 backdrop-blur-xl shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] transition hover:bg-white/[0.08]"
+                >
+                  <div className="text-sm font-semibold tracking-tight">
+                    {f.title}
                   </div>
-                  <div className="mt-4 text-sm font-semibold">{s.title}</div>
-                  <div className="mt-2 text-sm leading-6 text-zinc-600">{s.desc}</div>
+                  <div className="mt-3 text-sm leading-6 text-zinc-300">
+                    {f.desc}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section id="pricing" className="border-t border-zinc-100 bg-white">
-          <div className="mx-auto w-full max-w-6xl px-6 py-16">
-            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        {/* ================= PRICING ================= */}
+        <section id="pricing" className="border-t border-white/10">
+          <div className="mx-auto max-w-6xl px-6 py-20">
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="text-sm text-indigo-200">Pricing</div>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Simple plans. Clear limits.</h2>
+              <p className="mt-4 text-sm text-zinc-300">Start free, upgrade when you need more generations.</p>
+            </div>
+
+            <div className="mt-14 grid gap-6 lg:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-8 shadow-[0_20px_70px_-50px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold">Free</div>
+                  <div className="text-xs text-zinc-400">For exploration</div>
+                </div>
+                <div className="mt-5 flex items-end gap-2">
+                  <div className="text-4xl font-semibold tracking-tight">$0</div>
+                  <div className="pb-1 text-sm text-zinc-400">/ month</div>
+                </div>
+                <div className="mt-6 grid gap-3">
+                  <Bullet>20 generations / month</Bullet>
+                  <Bullet>Save & favorite</Bullet>
+                  <Bullet>Domain hints</Bullet>
+                </div>
+                <Link
+                  href="/register"
+                  className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-md border border-white/12 bg-white/5 text-sm transition hover:bg-white/10"
+                >
+                  Get started
+                </Link>
+              </div>
+
+              <div className="relative overflow-hidden rounded-2xl border border-[#6b2a8f]/45 bg-white/[0.06] p-8 shadow-[0_0_0_1px_rgba(107,42,143,0.25),0_30px_120px_-70px_rgba(107,42,143,0.85)] backdrop-blur-xl">
+                <div className="pointer-events-none absolute inset-0">
+                  <div className="absolute -top-24 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-[#6b2a8f]/30 blur-[140px]" />
+                  <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:96px_96px]" />
+                </div>
+
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs text-zinc-200">
+                    Most popular
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="text-sm font-semibold">Pro</div>
+                    <div className="text-xs text-zinc-300">Best value</div>
+                  </div>
+
+                  <div className="mt-5 flex items-end gap-2">
+                    <div className="text-4xl font-semibold tracking-tight">$19</div>
+                    <div className="pb-1 text-sm text-zinc-300">/ month</div>
+                  </div>
+                  <div className="mt-2 text-xs text-zinc-300">Upgrade for higher limits and faster iterations.</div>
+
+                  <div className="mt-6 grid gap-3">
+                    <Bullet>200 generations / month</Bullet>
+                    <Bullet>Priority generation</Bullet>
+                    <Bullet>Domain checks</Bullet>
+                    <Bullet>Billing portal</Bullet>
+                  </div>
+
+                  <Link
+                    href="/register"
+                    className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-md bg-[#6b2a8f] text-sm font-medium text-white shadow-lg shadow-[#2b0a3d]/40 transition hover:bg-[#7b34a5]"
+                  >
+                    Start free trial
+                  </Link>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-8 shadow-[0_20px_70px_-50px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold">Enterprise</div>
+                  <div className="text-xs text-zinc-400">Custom</div>
+                </div>
+                <div className="mt-5 text-4xl font-semibold tracking-tight">Let’s talk</div>
+                <div className="mt-2 text-sm text-zinc-300">For teams running high-volume naming sprints.</div>
+                <div className="mt-6 grid gap-3">
+                  <Bullet>High-volume usage</Bullet>
+                  <Bullet>Team workflows</Bullet>
+                  <Bullet>Dedicated support</Bullet>
+                </div>
+                <Link
+                  href="mailto:sales@namifyai.com"
+                  className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-md border border-white/12 bg-white/5 text-sm transition hover:bg-white/10"
+                >
+                  Contact sales
+                </Link>
+              </div>
+            </div>
+
+            <div className="mx-auto mt-10 max-w-3xl text-center text-xs text-zinc-400">
+              Plans are billed monthly. You can cancel anytime.
+            </div>
+          </div>
+        </section>
+
+        {/* ================= FOOTER ================= */}
+        <footer className="border-t border-white/10">
+          <div className="mx-auto max-w-6xl px-6 py-12">
+            <div className="flex flex-col gap-6 sm:flex-row sm:justify-between">
               <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Pricing</h2>
-                <p className="mt-2 text-sm text-zinc-600">Start free. Upgrade when you need more generations.</p>
-              </div>
-              <Link className="h-10 rounded-md bg-black px-4 text-sm font-medium text-white hover:bg-zinc-900 inline-flex items-center justify-center" href="/register">
-                Start free
-              </Link>
-            </div>
-
-            <div className="mt-10 grid gap-6 md:grid-cols-2">
-              <div className="rounded-2xl border border-zinc-200 p-8">
-                <div className="text-sm font-semibold">Free</div>
-                <div className="mt-3 text-4xl font-semibold">$0</div>
-                <div className="mt-1 text-sm text-zinc-500">For trying NamifyAI</div>
-                <div className="mt-6 space-y-3 text-sm text-zinc-700">
-                  <div>20 generations / month</div>
-                  <div>Save names</div>
-                  <div>Favorite names</div>
+                <div className="text-sm font-semibold">NamifyAI</div>
+                <div className="mt-2 text-sm text-zinc-400">
+                  Premium AI business name generation.
                 </div>
-                <Link className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-md border border-zinc-200 text-sm font-medium hover:bg-zinc-50" href="/register">
-                  Create free account
+                <div className="mt-4 text-xs text-zinc-500">
+                  © {new Date().getFullYear()} NamifyAI
+                </div>
+              </div>
+
+              <div className="flex gap-10 text-sm">
+                <Link href="#pricing" className="text-zinc-400 hover:text-white">
+                  Pricing
                 </Link>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-950 p-8 text-white">
-                <div className="text-sm font-semibold">Pro</div>
-                <div className="mt-3 text-4xl font-semibold">$19</div>
-                <div className="mt-1 text-sm text-zinc-300">For founders naming fast</div>
-                <div className="mt-6 space-y-3 text-sm text-zinc-200">
-                  <div>200 generations / month</div>
-                  <div>Priority generation</div>
-                  <div>Billing & subscription management</div>
-                </div>
-                <Link className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-md bg-white text-sm font-medium text-zinc-950 hover:bg-zinc-200" href="/register">
-                  Upgrade to Pro
+                <Link href="/login" className="text-zinc-400 hover:text-white">
+                  Log in
+                </Link>
+                <Link href="/register" className="text-zinc-400 hover:text-white">
+                  Start free
                 </Link>
               </div>
             </div>
           </div>
-        </section>
-
-        <section className="border-t border-zinc-100 bg-zinc-50">
-          <div className="mx-auto w-full max-w-6xl px-6 py-16">
-            <h2 className="text-2xl font-semibold tracking-tight">Loved by builders</h2>
-            <div className="mt-8 grid gap-6 md:grid-cols-3">
-              {[
-                {
-                  quote: "We named our product in 10 minutes. The tone controls are perfect.",
-                  name: "Asha, Indie Founder",
-                },
-                {
-                  quote: "The results feel brandable, not generic. Huge time saver for client work.",
-                  name: "Marco, Agency Owner",
-                },
-                {
-                  quote: "Saving + favoriting made it easy to shortlist and share with my cofounder.",
-                  name: "Leila, Startup Operator",
-                },
-              ].map((t) => (
-                <div key={t.name} className="rounded-2xl bg-white p-6 shadow-sm">
-                  <div className="text-sm leading-6 text-zinc-700">“{t.quote}”</div>
-                  <div className="mt-4 text-xs font-medium text-zinc-500">{t.name}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="faq" className="border-t border-zinc-100 bg-white">
-          <div className="mx-auto w-full max-w-6xl px-6 py-16">
-            <h2 className="text-2xl font-semibold tracking-tight">FAQ</h2>
-            <div className="mt-8 grid gap-6 md:grid-cols-2">
-              {[
-                {
-                  q: "Does NamifyAI check domain availability?",
-                  a: "Not yet. We provide a domain availability hint, but we don’t perform live lookups.",
-                },
-                {
-                  q: "Are names guaranteed to be trademark-free?",
-                  a: "No. We avoid famous brands and obvious trademarks, but you should run a legal/trademark check before launching.",
-                },
-                {
-                  q: "Can I cancel Pro anytime?",
-                  a: "Yes. You’ll keep Pro until the end of your billing period.",
-                },
-                {
-                  q: "Do you store my prompts?",
-                  a: "We store the inputs you use to generate names so you can revisit results and keep a history in your dashboard.",
-                },
-              ].map((f) => (
-                <div key={f.q} className="rounded-2xl border border-zinc-200 p-6">
-                  <div className="text-sm font-semibold">{f.q}</div>
-                  <div className="mt-2 text-sm leading-6 text-zinc-600">{f.a}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        </footer>
       </main>
-
-      <footer className="border-t border-zinc-100 bg-white">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 py-10 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-zinc-600">© {new Date().getFullYear()} NamifyAI</div>
-          <div className="flex gap-4 text-sm">
-            <Link className="text-zinc-600 hover:text-zinc-950" href="/login">
-              Log in
-            </Link>
-            <Link className="text-zinc-600 hover:text-zinc-950" href="/register">
-              Start free
-            </Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -68,47 +68,35 @@ export default function DashboardHomePage() {
       : 0
     : 0;
 
+  const savedCount = namesQuery.data?.items?.length ?? 0;
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Dashboard</CardTitle>
-          <CardDescription>
-            Generate new business names, save favorites, and manage your subscription.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild>
-            <Link href="/dashboard/generate">Generate names</Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Usage</CardTitle>
-            <CardDescription>Credits remaining this month</CardDescription>
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="border-white/10 bg-white/[0.04] shadow-[0_20px_70px_-50px_rgba(0,0,0,0.85)] backdrop-blur-xl md:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-zinc-300">Usage remaining</CardTitle>
+            <CardDescription className="text-xs text-zinc-400">Credits left this month</CardDescription>
           </CardHeader>
           <CardContent>
             {usageQuery.isError ? (
-              <p className="text-sm text-zinc-500">Unable to load usage.</p>
+              <p className="text-sm text-zinc-400">Unable to load usage.</p>
             ) : (
               <>
-                <div className="text-2xl font-semibold">
-                  {usageQuery.isLoading ? "…" : remaining ?? "—"}
+                <div className="flex items-end justify-between gap-4">
+                  <div className="text-3xl font-semibold tracking-tight text-zinc-50">
+                    {usageQuery.isLoading ? "…" : remaining ?? "—"}
+                  </div>
+                  <div className="text-xs text-zinc-400">
+                    {usageQuery.data ? `${usageQuery.data.usedCredits} / ${usageQuery.data.limit}` : ""}
+                  </div>
                 </div>
-                <div className="mt-3">
+                <div className="mt-4">
                   <Progress value={usageQuery.isLoading ? 0 : usedPct} />
-                </div>
-                <div className="mt-2 text-sm text-zinc-500">
-                  {usageQuery.data
-                    ? `${usageQuery.data.usedCredits} used / ${usageQuery.data.limit} this month`
-                    : ""}
                 </div>
                 {usageQuery.data?.plan === "FREE" && remaining !== null && remaining <= 0 ? (
                   <div className="mt-4">
-                    <Button asChild size="sm">
+                    <Button asChild size="sm" className="bg-[#6b2a8f] text-white hover:bg-[#7b34a5]">
                       <Link href="/dashboard/billing">Upgrade to Pro</Link>
                     </Button>
                   </div>
@@ -118,71 +106,101 @@ export default function DashboardHomePage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Plan</CardTitle>
-            <CardDescription>Your current subscription</CardDescription>
+        <Card className="border-white/10 bg-white/[0.04] shadow-[0_20px_70px_-50px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-zinc-300">Plan</CardTitle>
+            <CardDescription className="text-xs text-zinc-400">Current subscription</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">
+            <div className="text-2xl font-semibold tracking-tight text-zinc-50">
               {usageQuery.isLoading ? "…" : usageQuery.data?.plan ?? "—"}
             </div>
-            <div className="mt-1 text-sm text-zinc-500">
-              {usageQuery.data?.plan === "PRO" ? "Pro subscription active" : "Free tier"}
+            <div className="mt-1 text-xs text-zinc-400">
+              {usageQuery.data?.plan === "PRO" ? "Pro active" : "Free tier"}
+            </div>
+            <div className="mt-4">
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="w-full border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
+              >
+                <Link href="/dashboard/billing">Manage</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-white/10 bg-white/[0.04] shadow-[0_20px_70px_-50px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-zinc-300">Saved</CardTitle>
+            <CardDescription className="text-xs text-zinc-400">Recent names</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-semibold tracking-tight text-zinc-50">
+              {namesQuery.isLoading ? "…" : savedCount}
+            </div>
+            <div className="mt-1 text-xs text-zinc-400">Last 8 saved names</div>
+            <div className="mt-4">
+              <Button asChild size="sm" className="w-full bg-[#6b2a8f] text-white hover:bg-[#7b34a5]">
+                <Link href="/dashboard/generate">Generate</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="border-white/10 bg-white/[0.04] shadow-[0_20px_70px_-50px_rgba(0,0,0,0.85)] backdrop-blur-xl">
         <CardHeader className="flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle className="text-base">Recent saved names</CardTitle>
-            <CardDescription>Your latest saved ideas</CardDescription>
+            <CardTitle className="text-base text-zinc-50">Recent saved names</CardTitle>
+            <CardDescription className="text-zinc-400">Your latest saved ideas</CardDescription>
           </div>
-          <Button asChild variant="outline" size="sm">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
+          >
             <Link href="/dashboard/generate">Generate more</Link>
           </Button>
         </CardHeader>
         <CardContent>
           {namesQuery.isError ? (
-            <p className="text-sm text-zinc-500">Unable to load saved names.</p>
+            <p className="text-sm text-zinc-400">Unable to load saved names.</p>
           ) : namesQuery.isLoading ? (
-            <p className="text-sm text-zinc-500">Loading…</p>
+            <p className="text-sm text-zinc-400">Loading…</p>
           ) : namesQuery.data?.items?.length ? (
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10">
               {namesQuery.data.items.map((item) => (
-                <div key={item.id} className="rounded-lg border border-zinc-200 p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="truncate font-semibold">{item.name}</div>
-                      <div className="mt-1 text-xs text-zinc-500">
-                        {new Date(item.createdAt).toLocaleDateString()}
-                      </div>
+                <div key={item.id} className="flex items-center justify-between gap-4 bg-white/[0.03] px-4 py-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-zinc-50">{item.name}</div>
+                    <div className="mt-1 text-xs text-zinc-400">
+                      {new Date(item.createdAt).toLocaleDateString()}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={favoriteMutation.isPending}
-                      onClick={() => {
-                        favoriteMutation.mutate({ id: item.id, favorite: !item.isFavorite });
-                      }}
-                      type="button"
-                    >
-                      {item.isFavorite ? "Unfavorite" : "Favorite"}
-                    </Button>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
+                    disabled={favoriteMutation.isPending}
+                    onClick={() => {
+                      favoriteMutation.mutate({ id: item.id, favorite: !item.isFavorite });
+                    }}
+                    type="button"
+                  >
+                    {item.isFavorite ? "Unfavorite" : "Favorite"}
+                  </Button>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed border-zinc-200 p-6">
-              <div className="text-sm font-medium">No saved names yet</div>
-              <div className="mt-1 text-sm text-zinc-600">
-                Generate a few ideas and save the ones you like.
-              </div>
+            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-6">
+              <div className="text-sm font-medium text-zinc-50">No saved names yet</div>
+              <div className="mt-1 text-sm text-zinc-300">Generate a few ideas and save the ones you like.</div>
               <div className="mt-4">
-                <Button asChild>
+                <Button asChild className="bg-[#6b2a8f] text-white hover:bg-[#7b34a5]">
                   <Link href="/dashboard/generate">Generate names</Link>
                 </Button>
               </div>

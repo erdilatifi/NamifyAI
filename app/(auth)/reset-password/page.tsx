@@ -16,10 +16,17 @@ function ResetPasswordInner() {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Choose a new password</h1>
-        <p className="mt-2 text-sm text-zinc-600">Set a new password for your account.</p>
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-48 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[#2b0a3d]/40 blur-[140px]" />
+        <div className="absolute -left-48 top-1/4 h-[520px] w-[520px] rounded-full bg-[#0b2a3a]/25 blur-[160px]" />
+        <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:48px_48px]" />
+      </div>
+
+      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 text-zinc-50 shadow-[0_20px_80px_-40px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+          <h1 className="text-2xl font-semibold tracking-tight">Choose a new password</h1>
+          <p className="mt-2 text-sm text-zinc-300">Set a new password for your account.</p>
 
         <form
           className="mt-8 space-y-4"
@@ -52,7 +59,7 @@ function ResetPasswordInner() {
           <div className="space-y-2">
             <label className="text-sm font-medium">New password</label>
             <input
-              className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-400"
+              className="h-11 w-full rounded-md border border-white/15 bg-white/90 px-3 text-sm text-black outline-none placeholder:text-zinc-500 focus:border-white/30"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
@@ -66,18 +73,19 @@ function ResetPasswordInner() {
 
           <button
             disabled={isLoading}
-            className="h-11 w-full rounded-md bg-black text-sm font-medium text-white disabled:opacity-60"
+            className="h-11 w-full rounded-md bg-white/10 text-sm font-medium text-zinc-50 hover:bg-white/15 disabled:opacity-60"
             type="submit"
           >
             {isLoading ? "Saving..." : "Reset password"}
           </button>
         </form>
 
-        <p className="mt-6 text-sm text-zinc-600">
-          <Link className="font-medium text-black" href="/login">
+        <p className="mt-6 text-sm text-zinc-300">
+          <Link className="font-medium text-zinc-50" href="/login">
             Back to login
           </Link>
         </p>
+        </div>
       </div>
     </div>
   );
@@ -87,9 +95,15 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-background">
-          <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6">
-            <p className="text-sm text-zinc-600">Loading...</p>
+        <div className="relative min-h-screen overflow-hidden bg-background">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-48 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[#2b0a3d]/40 blur-[140px]" />
+            <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:48px_48px]" />
+          </div>
+          <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 text-zinc-50 shadow-[0_20px_80px_-40px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+              <p className="text-sm text-zinc-300">Loading...</p>
+            </div>
           </div>
         </div>
       }

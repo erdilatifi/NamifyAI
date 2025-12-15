@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #070707;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -12,15 +12,38 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+@keyframes aurora-shift {
+  0% {
+    transform: translate3d(-12%, -8%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(10%, 6%, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(-12%, -8%, 0) scale(1);
+  }
+}
+
+.aurora {
+  position: absolute;
+  inset: -40%;
+  filter: blur(80px);
+  opacity: 0.45;
+  background: rgba(43, 10, 61, 0.65);
+  animation: aurora-shift 18s ease-in-out infinite;
+}
+
+.noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  opacity: 0.06;
+  mix-blend-mode: overlay;
 }

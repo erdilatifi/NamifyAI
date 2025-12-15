@@ -52,9 +52,9 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="border-white/10 bg-white/[0.04] shadow-[0_20px_70px_-50px_rgba(0,0,0,0.85)] backdrop-blur-xl">
         <CardHeader>
-          <CardTitle>Billing</CardTitle>
+          <CardTitle className="text-zinc-50">Billing</CardTitle>
           <CardDescription>Upgrade to Pro or manage your subscription.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -65,22 +65,23 @@ export default function BillingPage() {
             <p className="mb-3 text-sm text-red-600">{(portalMutation.error as Error).message}</p>
           ) : null}
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-zinc-200 p-4">
-              <div className="text-sm font-medium">Current plan</div>
-              <div className="mt-2 text-2xl font-semibold">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="text-sm font-medium text-zinc-200">Current plan</div>
+              <div className="mt-2 text-2xl font-semibold text-zinc-50">
                 {usageQuery.isLoading ? "…" : usageQuery.data?.plan ?? "—"}
               </div>
-              <div className="mt-1 text-sm text-zinc-500">
+              <div className="mt-1 text-sm text-zinc-400">
                 {usageQuery.data ? `${usageQuery.data.usedCredits} used / ${usageQuery.data.limit} limit` : ""}
               </div>
             </div>
 
-            <div className="rounded-lg border border-zinc-200 p-4">
-              <div className="text-sm font-medium">Actions</div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="text-sm font-medium text-zinc-200">Actions</div>
               <div className="mt-3 flex flex-wrap gap-3">
                 <Button
                   disabled={checkoutMutation.isPending || usageQuery.data?.plan === "PRO"}
                   onClick={() => checkoutMutation.mutate()}
+                  className="bg-[#6b2a8f] text-white hover:bg-[#7b34a5]"
                   type="button"
                 >
                   Upgrade to Pro
@@ -89,18 +90,19 @@ export default function BillingPage() {
                   variant="outline"
                   disabled={portalMutation.isPending}
                   onClick={() => portalMutation.mutate()}
+                  className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
                   type="button"
                 >
                   Manage billing
                 </Button>
-                <Button asChild variant="outline">
+                <Button asChild variant="outline" className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10">
                   <Link href="/dashboard">Back</Link>
                 </Button>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 text-sm text-zinc-500">
+          <div className="mt-6 text-sm text-zinc-400">
             Webhooks update your plan automatically after payment.
           </div>
         </CardContent>

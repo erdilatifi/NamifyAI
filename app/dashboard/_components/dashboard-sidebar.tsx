@@ -17,10 +17,14 @@ export default function DashboardSidebar({ email }: { email: string }) {
   ];
 
   return (
-    <Card>
+    <Card className="border-white/10 bg-white/[0.04] shadow-[0_20px_70px_-50px_rgba(0,0,0,0.85)] backdrop-blur-xl">
       <CardContent className="p-4">
-        <div className="text-sm font-semibold">NamifyAI</div>
-        <div className="mt-1 text-xs text-zinc-500 truncate">{email}</div>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-semibold text-zinc-50">NamifyAI</div>
+            <div className="mt-1 text-xs text-zinc-400 truncate">{email}</div>
+          </div>
+        </div>
 
         <nav className="mt-6 grid gap-1">
           {items.map((item) => {
@@ -29,8 +33,12 @@ export default function DashboardSidebar({ email }: { email: string }) {
               <Button
                 key={item.href}
                 asChild
-                variant={isActive ? "default" : "ghost"}
-                className={isActive ? "w-full justify-start" : "w-full justify-start"}
+                variant="ghost"
+                className={
+                  isActive
+                    ? "w-full justify-start bg-white/10 text-zinc-50 hover:bg-white/12"
+                    : "w-full justify-start text-zinc-300 hover:bg-white/5 hover:text-zinc-50"
+                }
                 size="sm"
               >
                 <Link href={item.href}>{item.label}</Link>
@@ -39,7 +47,9 @@ export default function DashboardSidebar({ email }: { email: string }) {
           })}
         </nav>
 
-        <SignOutButton />
+        <div className="mt-4">
+          <SignOutButton />
+        </div>
       </CardContent>
     </Card>
   );
