@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
@@ -30,10 +31,24 @@ export async function POST(req: Request) {
 
   const baseUrl = env.NEXT_PUBLIC_APP_URL;
 
-  const portal = await stripe.billingPortal.sessions.create({
-    customer: sub.stripeCustomerId,
-    return_url: `${baseUrl}/dashboard/billing`,
-  });
+  try {
+    const portal = await stripe.billingPortal.sessions.create({
+      customer: sub.stripeCustomerId,
+      return_url: `${baseUrl}/dashboard/billing`,
+    });
 
-  return NextResponse.json({ url: portal.url });
+    return NextResponse.json({ url: portal.url });
+  } catch (err) {
+    console.error("/api/stripe/portal error:", err);
+    const stripeErr = err as Partial<Stripe.StripeRawError> & { message?: string };
+    const message = stripeErr?.message || (err instanceof Error ? err.message : "Stripe portal failed");
+    const details = {
+      type: stripeErr?.type,
+      code: stripeErr?.code,
+      param: stripeErr?.param,
+      requestId: stripeErr?.requestId,
+    };
+
+    return NextResponse.json({ error: message, details }, { status: 500 });
+  }
 }

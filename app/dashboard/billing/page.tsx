@@ -25,7 +25,10 @@ export default function BillingPage() {
   const checkoutMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/stripe/checkout", { method: "POST" });
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as null | { error?: string };
+        throw new Error(body?.error || "Failed");
+      }
       return (await res.json()) as { url: string };
     },
     onSuccess: (data) => {
@@ -36,7 +39,10 @@ export default function BillingPage() {
   const portalMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/stripe/portal", { method: "POST" });
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as null | { error?: string };
+        throw new Error(body?.error || "Failed");
+      }
       return (await res.json()) as { url: string };
     },
     onSuccess: (data) => {
@@ -52,6 +58,12 @@ export default function BillingPage() {
           <CardDescription>Upgrade to Pro or manage your subscription.</CardDescription>
         </CardHeader>
         <CardContent>
+          {checkoutMutation.isError ? (
+            <p className="mb-3 text-sm text-red-600">{(checkoutMutation.error as Error).message}</p>
+          ) : null}
+          {portalMutation.isError ? (
+            <p className="mb-3 text-sm text-red-600">{(portalMutation.error as Error).message}</p>
+          ) : null}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-zinc-200 p-4">
               <div className="text-sm font-medium">Current plan</div>

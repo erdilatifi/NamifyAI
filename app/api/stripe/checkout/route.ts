@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
@@ -52,18 +53,57 @@ export async function POST(req: Request) {
 
   const baseUrl = env.NEXT_PUBLIC_APP_URL;
 
-  const checkoutSession = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
-    allow_promotion_codes: true,
-    subscription_data: {
-      metadata: { userId },
-    },
-    metadata: { userId },
-    success_url: `${baseUrl}/dashboard/billing?success=1`,
-    cancel_url: `${baseUrl}/dashboard/billing?canceled=1`,
-  });
+  const resolvePriceId = async () => {
+    const configured = env.STRIPE_PRO_PRICE_ID;
+    if (!configured) {
+      throw new Error("Missing STRIPE_PRO_PRICE_ID");
+    }
+    if (configured.startsWith("price_")) return configured;
 
-  return NextResponse.json({ url: checkoutSession.url });
+    if (configured.startsWith("prod_")) {
+      const prices = await stripe.prices.list({
+        product: configured,
+        active: true,
+        limit: 10,
+      });
+
+      const recurring = prices.data.find((p) => Boolean(p.recurring));
+      if (recurring?.id) return recurring.id;
+
+      throw new Error("No active recurring price found for STRIPE_PRO_PRICE_ID product");
+    }
+
+    throw new Error("STRIPE_PRO_PRICE_ID must start with price_ or prod_");
+  };
+
+  try {
+    const priceId = await resolvePriceId();
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      allow_promotion_codes: true,
+      subscription_data: {
+        metadata: { userId },
+      },
+      metadata: { userId },
+      success_url: `${baseUrl}/dashboard/billing?success=1`,
+      cancel_url: `${baseUrl}/dashboard/billing?canceled=1`,
+    });
+
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (err) {
+    console.error("/api/stripe/checkout error:", err);
+    const stripeErr = err as Partial<Stripe.StripeRawError> & { message?: string };
+    const message = stripeErr?.message || (err instanceof Error ? err.message : "Stripe checkout failed");
+    const details = {
+      type: stripeErr?.type,
+      code: stripeErr?.code,
+      param: stripeErr?.param,
+      requestId: stripeErr?.requestId,
+    };
+
+    return NextResponse.json({ error: message, details }, { status: 500 });
+  }
 }

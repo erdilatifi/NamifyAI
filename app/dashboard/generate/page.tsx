@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+const NASS_CORPORATE_REGISTRATIONS_URL = "https://www.nass.org/business-services/corporate-registrations";
+
 type GenerateInput = {
   description: string;
   industry: string;
@@ -18,8 +20,12 @@ type GenerateInput = {
 
 type Generated = {
   name: string;
+  originalName?: string;
+  replacedBecauseTaken?: boolean;
+  isExistingBusinessName?: boolean;
   tagline?: string;
-  domainHint?: string;
+  domains?: Array<{ fqdn: string; status: "taken" | "likely_available" }>;
+  availableDomains?: string[];
 };
 
 export default function GeneratePage() {
@@ -51,39 +57,25 @@ export default function GeneratePage() {
         throw new Error("Usage limit reached");
       }
 
-      if (!res.ok || !res.body) {
-        throw new Error("Failed to generate");
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as null | { error?: string };
+        throw new Error(body?.error || "Failed to generate");
       }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-      }
-
-      return buf;
+      return (await res.json()) as { suggestions: Generated[] };
     },
-    onSuccess: (raw) => {
-      try {
-        const parsed = JSON.parse(raw) as { suggestions: Generated[] };
-        setResults(parsed.suggestions);
-        setSavedIdsByName({});
-        setFavoritedByName({});
-      } catch {
-        setResults([]);
-        setSavedIdsByName({});
-        setFavoritedByName({});
-      }
+    onSuccess: (data) => {
+      setResults(data.suggestions);
+      setSavedIdsByName({});
+      setFavoritedByName({});
     },
     onError: (err) => {
       if ((err as Error).message === "Usage limit reached") {
         setActionError("You reached your monthly generation limit.");
         return;
       }
+
+      setActionError((err as Error).message);
     },
   });
 
@@ -229,9 +221,23 @@ export default function GeneratePage() {
               {results.map((r) => (
                 <div key={r.name} className="rounded-lg border border-zinc-200 p-4">
                   <div className="font-semibold">{r.name}</div>
+                  {r.replacedBecauseTaken && r.originalName ? (
+                    <div className="mt-1 text-xs text-zinc-500">
+                      {r.originalName} was taken. Suggested alternative.
+                    </div>
+                  ) : null}
                   {r.tagline ? <div className="mt-1 text-sm text-zinc-600">{r.tagline}</div> : null}
-                  {r.domainHint ? (
-                    <div className="mt-1 text-xs text-zinc-500">{r.domainHint}</div>
+                  {r.availableDomains && r.availableDomains.length ? (
+                    <div className="mt-2 text-xs text-zinc-600">
+                      <div className="font-medium text-zinc-700">Available domains</div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {r.availableDomains.slice(0, 6).map((d) => (
+                          <span key={d} className="rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5">
+                            {d}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   ) : null}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
@@ -243,6 +249,15 @@ export default function GeneratePage() {
                       type="button"
                     >
                       Copy
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <a
+                        href={NASS_CORPORATE_REGISTRATIONS_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Check business registration
+                      </a>
                     </Button>
                     <Button
                       variant="outline"

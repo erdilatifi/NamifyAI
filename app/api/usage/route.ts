@@ -27,7 +27,8 @@ export async function GET(req: Request) {
     select: { plan: true, status: true },
   });
 
-  const isPro = subscription?.plan === "PRO" && subscription?.status === "ACTIVE";
+  const isPro =
+    subscription?.plan === "PRO" && (subscription?.status === "ACTIVE" || subscription?.status === "TRIALING");
   const limit = isPro ? PRO_LIMIT : FREE_LIMIT;
 
   const now = new Date();
