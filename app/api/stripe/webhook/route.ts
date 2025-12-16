@@ -100,21 +100,9 @@ export async function POST(req: Request) {
   }
 
   // Idempotency: Stripe may retry events. Ensure we only process each event.id once.
-  try {
-    await prisma.stripeWebhookEvent.create({
-      data: {
-        id: event.id,
-        type: event.type,
-        createdAt: new Date(event.created * 1000),
-      },
-    });
-  } catch (err) {
-    // Unique violation means we've already processed this event.
-    const prismaErr = err as { code?: string };
-    if (prismaErr?.code === "P2002") {
-      return NextResponse.json({ received: true });
-    }
-    throw err;
+  const alreadyProcessed = await prisma.stripeWebhookEvent.findUnique({ where: { id: event.id } });
+  if (alreadyProcessed) {
+    return NextResponse.json({ received: true });
   }
 
   if (
@@ -128,7 +116,15 @@ export async function POST(req: Request) {
     };
     const userId = await resolveUserId({ stripe, subscription });
     if (!userId) {
-      return NextResponse.json({ received: true });
+      const customerId = typeof subscription.customer === "string" ? subscription.customer : null;
+      console.error("Stripe webhook: unable to resolve userId", {
+        eventId: event.id,
+        type: event.type,
+        subscriptionId: subscription.id,
+        customerId,
+        subscriptionMetadata: subscription.metadata,
+      });
+      return NextResponse.json({ error: "Unable to resolve userId" }, { status: 500 });
     }
 
     const itemPrice = subscription.items.data[0]?.price ?? null;
@@ -161,7 +157,25 @@ export async function POST(req: Request) {
         currentPeriodEnd: periodEnd,
       },
     });
+
+    await prisma.stripeWebhookEvent.create({
+      data: {
+        id: event.id,
+        type: event.type,
+        createdAt: new Date(event.created * 1000),
+      },
+    });
+
+    return NextResponse.json({ received: true });
   }
+
+  await prisma.stripeWebhookEvent.create({
+    data: {
+      id: event.id,
+      type: event.type,
+      createdAt: new Date(event.created * 1000),
+    },
+  });
 
   return NextResponse.json({ received: true });
 }
