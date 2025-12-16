@@ -105,6 +105,71 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
   }
 
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    const userId = session.metadata?.userId ?? null;
+    const subscriptionId = typeof session.subscription === "string" ? session.subscription : null;
+    const customerId = typeof session.customer === "string" ? session.customer : null;
+
+    if (!userId || !subscriptionId) {
+      console.error("Stripe webhook: checkout.session.completed missing userId/subscription", {
+        eventId: event.id,
+        sessionId: session.id,
+        userId,
+        subscriptionId,
+        customerId,
+      });
+      return NextResponse.json({ error: "Missing userId/subscription" }, { status: 500 });
+    }
+
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscriptionWithPeriod = subscription as unknown as Stripe.Subscription & {
+      current_period_end?: number;
+    };
+
+    const itemPrice = subscription.items.data[0]?.price ?? null;
+    const priceId = itemPrice?.id ?? null;
+    const productId = typeof itemPrice?.product === "string" ? itemPrice.product : itemPrice?.product?.id ?? null;
+    const periodEnd = subscriptionWithPeriod.current_period_end
+      ? new Date(subscriptionWithPeriod.current_period_end * 1000)
+      : null;
+
+    const status = mapStatus(subscription.status);
+    const plan = mapPlan({ status, priceId, productId });
+
+    await prisma.subscription.upsert({
+      where: { userId },
+      create: {
+        userId,
+        plan,
+        status,
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subscription.id,
+        stripePriceId: priceId,
+        currentPeriodEnd: periodEnd,
+      },
+      update: {
+        plan,
+        status,
+        stripeCustomerId: customerId ?? undefined,
+        stripeSubscriptionId: subscription.id,
+        stripePriceId: priceId,
+        currentPeriodEnd: periodEnd,
+      },
+    });
+
+    await prisma.stripeWebhookEvent.create({
+      data: {
+        id: event.id,
+        type: event.type,
+        createdAt: new Date(event.created * 1000),
+      },
+    });
+
+    return NextResponse.json({ received: true });
+  }
+
   if (
     event.type === "customer.subscription.created" ||
     event.type === "customer.subscription.updated" ||
