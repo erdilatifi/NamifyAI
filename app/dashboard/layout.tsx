@@ -50,6 +50,9 @@ export default async function DashboardLayout({
                   <Link href="/dashboard">Overview</Link>
                 </Button>
                 <Button asChild variant="ghost" className="w-full justify-start text-zinc-300 hover:bg-white/5 hover:text-zinc-50">
+                  <Link href="/dashboard/history">History</Link>
+                </Button>
+                <Button asChild variant="ghost" className="w-full justify-start text-zinc-300 hover:bg-white/5 hover:text-zinc-50">
                   <Link href="/dashboard/generate">Generate</Link>
                 </Button>
                 <Button asChild variant="ghost" className="w-full justify-start text-zinc-300 hover:bg-white/5 hover:text-zinc-50">

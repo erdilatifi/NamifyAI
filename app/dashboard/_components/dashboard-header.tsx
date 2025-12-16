@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 function titleFromPath(pathname: string) {
   if (pathname === "/dashboard") return "Overview";
+  if (pathname.startsWith("/dashboard/history")) return "History";
   if (pathname.startsWith("/dashboard/generate")) return "Generate";
   if (pathname.startsWith("/dashboard/billing")) return "Billing";
   return "Dashboard";
@@ -18,6 +19,7 @@ export default function DashboardHeader() {
 
   const tabs = [
     { href: "/dashboard", label: "Overview" },
+    { href: "/dashboard/history", label: "History" },
     { href: "/dashboard/generate", label: "Generate" },
     { href: "/dashboard/billing", label: "Billing" },
   ];
@@ -29,6 +31,7 @@ export default function DashboardHeader() {
           <div className="text-xl font-semibold tracking-tight text-zinc-50">{title}</div>
           <div className="mt-1 text-sm text-zinc-400">
             {title === "Overview" ? "Your usage, plan, and saved names." : null}
+            {title === "History" ? "Browse all your saved generated names." : null}
             {title === "Generate" ? "Create and save new name ideas." : null}
             {title === "Billing" ? "Upgrade or manage your subscription." : null}
           </div>

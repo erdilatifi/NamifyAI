@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import DashboardHomeSkeleton from "@/app/dashboard/_components/dashboard-home-skeleton";
 
 type UsageResponse = {
   periodStart: string;
@@ -211,6 +212,16 @@ export default function DashboardHomePage() {
       await queryClient.invalidateQueries({ queryKey: ["names"] });
     },
   });
+
+  const isDashboardLoading =
+    usageQuery.isLoading ||
+    namesQuery.isLoading ||
+    weeklyUsageQuery.isLoading ||
+    favoritesCountQuery.isLoading;
+
+  if (isDashboardLoading) {
+    return <DashboardHomeSkeleton />;
+  }
 
   const remaining =
     usageQuery.data ? Math.max(0, usageQuery.data.limit - usageQuery.data.usedCredits) : null;
