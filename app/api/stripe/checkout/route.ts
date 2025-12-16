@@ -95,10 +95,15 @@ export async function POST(req: Request) {
   try {
     const priceId = await resolvePriceId();
 
+    const price = await stripe.prices.retrieve(priceId);
+    const usageType = price.recurring?.usage_type ?? null;
+    const lineItem: Stripe.Checkout.SessionCreateParams.LineItem =
+      usageType === "metered" ? { price: priceId } : { price: priceId, quantity: 1 };
+
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: priceId }],
+      line_items: [lineItem],
       allow_promotion_codes: true,
       subscription_data: {
         metadata: { userId },
