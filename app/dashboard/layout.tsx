@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
-import DashboardHeader from "@/app/dashboard/_components/dashboard-header";
 import DashboardSidebar from "@/app/dashboard/_components/dashboard-sidebar";
 
 export default async function DashboardLayout({
@@ -29,16 +28,14 @@ export default async function DashboardLayout({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(0,0,0,0.72)_100%)]" />
       </div>
 
-      <div className="relative mx-auto w-full max-w-6xl px-6 py-6 pt-28">
-        <header className="mb-6">
-          <DashboardHeader />
-        </header>
+      <aside className="hidden lg:block">
+        <div className="fixed inset-y-0 left-0 z-40 w-[280px]">
+          <DashboardSidebar email={session?.user?.email ?? ""} />
+        </div>
+      </aside>
 
-        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-          <aside className="hidden lg:block">
-            <DashboardSidebar email={session?.user?.email ?? ""} />
-          </aside>
-
+      <div className="relative w-full px-6 py-8 lg:pl-[304px] lg:pr-10">
+        <div className="mx-auto w-full max-w-7xl">
           <main className="min-w-0">{children}</main>
         </div>
 

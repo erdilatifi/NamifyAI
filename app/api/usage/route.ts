@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-
 import { auth } from "@/lib/auth";
+import { errorJson, okJson } from "@/lib/api";
+import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -14,21 +14,28 @@ function getCurrentMonthPeriod(now: Date) {
 const FREE_LIMIT = 20;
 const PRO_LIMIT = 200;
 
-export async function GET(req: Request) {
+function isProPrice(params: { priceId: string | null }) {
+  const configured = env.STRIPE_PRO_PRICE_ID;
+  if (!configured) return false;
+  if (configured.startsWith("price_")) return Boolean(params.priceId) && params.priceId === configured;
+  return false;
+}
+
+export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return errorJson({ status: 401, code: "UNAUTHORIZED", message: "Unauthorized" });
   }
 
   const userId = session.user.id;
 
   const subscription = await prisma.subscription.findUnique({
     where: { userId },
-    select: { plan: true, status: true },
+    select: { plan: true, status: true, stripePriceId: true },
   });
 
-  const isPro =
-    subscription?.plan === "PRO" && (subscription?.status === "ACTIVE" || subscription?.status === "TRIALING");
+  const isActive = subscription?.status === "ACTIVE" || subscription?.status === "TRIALING";
+  const isPro = Boolean(isActive) && (subscription?.plan === "PRO" || isProPrice({ priceId: subscription?.stripePriceId ?? null }));
   const limit = isPro ? PRO_LIMIT : FREE_LIMIT;
 
   const now = new Date();
@@ -41,11 +48,12 @@ export async function GET(req: Request) {
     select: { usedCredits: true, periodStart: true, periodEnd: true },
   });
 
-  return NextResponse.json({
+  return okJson({
     periodStart: usage.periodStart,
     periodEnd: usage.periodEnd,
     usedCredits: usage.usedCredits,
     limit,
     plan: isPro ? "PRO" : "FREE",
+    status: subscription?.status ?? null,
   });
 }

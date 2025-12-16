@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
-import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { errorJson, okJson } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    return errorJson({ status: 400, code: "INVALID_INPUT", message: "Invalid input" });
   }
 
   const { email, token, password } = parsed.data;
@@ -27,17 +27,17 @@ export async function POST(req: Request) {
   });
 
   if (!record || record.email !== email || record.expiresAt.getTime() < Date.now()) {
-    return NextResponse.json({ error: "Invalid or expired token" }, { status: 400 });
+    return errorJson({ status: 400, code: "INVALID_INPUT", message: "Invalid or expired token" });
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
 
   await prisma.user.update({
     where: { email },
-    data: { passwordHash } as any,
+    data: { passwordHash },
   });
 
   await prisma.passwordResetToken.delete({ where: { token } });
 
-  return NextResponse.json({ ok: true });
+  return okJson({});
 }

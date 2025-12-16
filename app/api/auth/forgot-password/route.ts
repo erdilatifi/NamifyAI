@@ -1,9 +1,10 @@
 import crypto from "crypto";
-import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { errorJson, getClientIp, okJson } from "@/lib/api";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -12,19 +13,44 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  const ipLimit = checkRateLimit({ key: `auth_forgot_password:ip:${ip}`, limit: 10, windowMs: 60_000 });
+  if (!ipLimit.allowed) {
+    return errorJson({
+      status: 429,
+      code: "RATE_LIMITED",
+      message: "Too many requests",
+      headers: rateLimitHeaders({ limit: 10, remaining: ipLimit.remaining, resetAt: ipLimit.resetAt }),
+    });
+  }
+
   const json = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    return errorJson({ status: 400, code: "INVALID_INPUT", message: "Invalid input" });
   }
 
   const email = parsed.data.email;
+
+  const emailLimit = checkRateLimit({
+    key: `auth_forgot_password:email:${email.toLowerCase()}`,
+    limit: 5,
+    windowMs: 60_000,
+  });
+  if (!emailLimit.allowed) {
+    return errorJson({
+      status: 429,
+      code: "RATE_LIMITED",
+      message: "Too many requests",
+      headers: rateLimitHeaders({ limit: 5, remaining: emailLimit.remaining, resetAt: emailLimit.resetAt }),
+    });
+  }
 
   const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
 
   // Always return 200 to avoid user enumeration.
   if (!user) {
-    return NextResponse.json({ ok: true });
+    return okJson({});
   }
 
   const token = crypto.randomBytes(32).toString("hex");
@@ -57,5 +83,5 @@ export async function POST(req: Request) {
     console.log("[forgot-password] RESEND_API_KEY not set. Reset URL:", resetUrl);
   }
 
-  return NextResponse.json({ ok: true });
+  return okJson({});
 }

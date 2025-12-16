@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useRef } from "react";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -22,6 +22,18 @@ type GenerateInput = {
   keywords?: string;
 };
 
+function getErrorMessage(body: unknown): string | undefined {
+  if (!body || typeof body !== "object") return undefined;
+  if ("error" in body) {
+    const err = (body as { error?: unknown }).error;
+    if (typeof err === "string") return err;
+    if (err && typeof err === "object" && "message" in err && typeof (err as { message?: unknown }).message === "string") {
+      return (err as { message: string }).message;
+    }
+  }
+  return undefined;
+}
+
 type Generated = {
   name: string;
   originalName?: string;
@@ -40,6 +52,8 @@ export default function GeneratePage() {
 
   const [progress, setProgress] = useState(0);
 
+  const progressIntervalRef = useRef<number | null>(null);
+
   const [results, setResults] = useState<Generated[]>([]);
   const [savedIdsByName, setSavedIdsByName] = useState<Record<string, string>>({});
   const [favoritedByName, setFavoritedByName] = useState<Record<string, boolean>>({});
@@ -47,6 +61,19 @@ export default function GeneratePage() {
   const [limitReached, setLimitReached] = useState(false);
 
   const generateMutation = useMutation({
+    onMutate: () => {
+      setProgress(8);
+      if (progressIntervalRef.current) {
+        window.clearInterval(progressIntervalRef.current);
+      }
+      progressIntervalRef.current = window.setInterval(() => {
+        setProgress((p) => {
+          if (p >= 92) return p;
+          const next = p + Math.max(1, Math.round((100 - p) * 0.06));
+          return Math.min(92, next);
+        });
+      }, 350);
+    },
     mutationFn: async (input: GenerateInput) => {
       setActionError(null);
       setLimitReached(false);
@@ -64,16 +91,26 @@ export default function GeneratePage() {
       }
 
       if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as null | { error?: string };
-        throw new Error(body?.error || "Failed to generate");
+        const body = (await res.json().catch(() => null)) as unknown;
+        throw new Error(getErrorMessage(body) || "Failed to generate");
       }
 
-      return (await res.json()) as { suggestions: Generated[] };
+      const body = (await res.json()) as { suggestions: Generated[] };
+      return body;
     },
     onSuccess: (data) => {
       setResults(data.suggestions);
       setSavedIdsByName({});
       setFavoritedByName({});
+      setProgress(100);
+      window.setTimeout(() => setProgress(0), 500);
+    },
+    onSettled: (_, error) => {
+      if (progressIntervalRef.current) {
+        window.clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      if (error) setProgress(0);
     },
     onError: (err) => {
       if ((err as Error).message === "Usage limit reached") {
@@ -84,34 +121,6 @@ export default function GeneratePage() {
       setActionError((err as Error).message);
     },
   });
-
-  useEffect(() => {
-    if (!generateMutation.isPending) {
-      setProgress(0);
-      return;
-    }
-
-    setProgress(8);
-    const interval = window.setInterval(() => {
-      setProgress((p) => {
-        if (p >= 92) return p;
-        const next = p + Math.max(1, Math.round((100 - p) * 0.06));
-        return Math.min(92, next);
-      });
-    }, 350);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [generateMutation.isPending]);
-
-  useEffect(() => {
-    if (generateMutation.isSuccess) {
-      setProgress(100);
-      const t = window.setTimeout(() => setProgress(0), 500);
-      return () => window.clearTimeout(t);
-    }
-  }, [generateMutation.isSuccess]);
 
   const saveMutation = useMutation({
     mutationFn: async (input: { name: string }) => {
@@ -244,7 +253,7 @@ export default function GeneratePage() {
               <div className="grid gap-2">
                 <label className="text-sm font-medium text-zinc-200">Tone</label>
                 <select
-                  className="h-11 w-full rounded-md border border-white/10 bg-white/5 px-3 text-sm text-zinc-50 outline-none focus-visible:ring-2 focus-visible:ring-[#6b2a8f] focus-visible:ring-offset-0"
+                  className="namify-tone-select h-11 w-full rounded-md border border-white/10 bg-white/5 px-3 text-sm text-zinc-50 outline-none focus-visible:ring-2 focus-visible:ring-[#6b2a8f] focus-visible:ring-offset-0"
                   value={tone}
                   onChange={(e) => setTone(e.target.value)}
                 >

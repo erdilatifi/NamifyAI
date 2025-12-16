@@ -28,6 +28,27 @@ function mapStatus(status: Stripe.Subscription.Status) {
   }
 }
 
+function isProPrice(params: { priceId: string | null; productId: string | null }) {
+  const configured = env.STRIPE_PRO_PRICE_ID;
+  if (!configured) return false;
+
+  if (configured.startsWith("price_")) {
+    return Boolean(params.priceId) && params.priceId === configured;
+  }
+
+  if (configured.startsWith("prod_")) {
+    return Boolean(params.productId) && params.productId === configured;
+  }
+
+  return false;
+}
+
+function mapPlan(params: { status: ReturnType<typeof mapStatus>; priceId: string | null; productId: string | null }) {
+  // If subscription is not active/trialing, treat as FREE regardless of the price.
+  if (params.status !== "ACTIVE" && params.status !== "TRIALING") return "FREE";
+  return isProPrice({ priceId: params.priceId, productId: params.productId }) ? "PRO" : "FREE";
+}
+
 export async function POST(req: Request) {
   if (!env.STRIPE_SECRET_KEY || !env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 500 });
@@ -49,6 +70,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  // Idempotency: Stripe may retry events. Ensure we only process each event.id once.
+  try {
+    await prisma.stripeWebhookEvent.create({
+      data: {
+        id: event.id,
+        type: event.type,
+        createdAt: new Date(event.created * 1000),
+      },
+    });
+  } catch (err) {
+    // Unique violation means we've already processed this event.
+    const prismaErr = err as { code?: string };
+    if (prismaErr?.code === "P2002") {
+      return NextResponse.json({ received: true });
+    }
+    throw err;
+  }
+
   if (
     event.type === "customer.subscription.created" ||
     event.type === "customer.subscription.updated" ||
@@ -61,13 +100,16 @@ export async function POST(req: Request) {
     const userId = subscription.metadata?.userId;
 
     if (userId) {
-      const priceId = subscription.items.data[0]?.price?.id ?? null;
+      const itemPrice = subscription.items.data[0]?.price ?? null;
+      const priceId = itemPrice?.id ?? null;
+      const productId =
+        typeof itemPrice?.product === "string" ? itemPrice.product : itemPrice?.product?.id ?? null;
       const periodEnd = subscriptionWithPeriod.current_period_end
         ? new Date(subscriptionWithPeriod.current_period_end * 1000)
         : null;
 
       const status = mapStatus(subscription.status);
-      const plan = status === "ACTIVE" || status === "TRIALING" ? "PRO" : "FREE";
+      const plan = mapPlan({ status, priceId, productId });
 
       await prisma.subscription.upsert({
         where: { userId },

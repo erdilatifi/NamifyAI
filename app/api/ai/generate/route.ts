@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
 import dns from "node:dns/promises";
 import OpenAI from "openai";
 import { z } from "zod";
 
 import { auth } from "@/lib/auth";
+import { errorJson, getClientIp, okJson } from "@/lib/api";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,13 @@ function getCurrentMonthPeriod(now: Date) {
 
 const FREE_LIMIT = 20;
 const PRO_LIMIT = 200;
+
+function isProPrice(params: { priceId: string | null }) {
+  const configured = env.STRIPE_PRO_PRICE_ID;
+  if (!configured) return false;
+  if (configured.startsWith("price_")) return Boolean(params.priceId) && params.priceId === configured;
+  return false;
+}
 
 const suggestionSchema = z.object({
   name: z.string().min(1).max(80),
@@ -124,29 +132,50 @@ async function checkDomains(baseLabel: string) {
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return errorJson({ status: 401, code: "UNAUTHORIZED", message: "Unauthorized" });
   }
 
   if (!env.OPENAI_API_KEY) {
-    return NextResponse.json({ error: "OpenAI is not configured" }, { status: 500 });
+    return errorJson({ status: 500, code: "NOT_CONFIGURED", message: "OpenAI is not configured" });
+  }
+
+  const userId = session.user.id;
+  const ip = getClientIp(req);
+  const ipLimit = checkRateLimit({ key: `ai_generate:ip:${ip}`, limit: 30, windowMs: 60_000 });
+  if (!ipLimit.allowed) {
+    return errorJson({
+      status: 429,
+      code: "RATE_LIMITED",
+      message: "Too many requests",
+      headers: rateLimitHeaders({ limit: 30, remaining: ipLimit.remaining, resetAt: ipLimit.resetAt }),
+    });
+  }
+
+  const userLimit = checkRateLimit({ key: `ai_generate:user:${userId}`, limit: 20, windowMs: 60_000 });
+  if (!userLimit.allowed) {
+    return errorJson({
+      status: 429,
+      code: "RATE_LIMITED",
+      message: "Too many requests",
+      headers: rateLimitHeaders({ limit: 20, remaining: userLimit.remaining, resetAt: userLimit.resetAt }),
+    });
   }
 
   const json = await req.json().catch(() => null);
   const parsed = inputSchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    return errorJson({ status: 400, code: "INVALID_INPUT", message: "Invalid input" });
   }
 
   try {
-    const userId = session.user.id;
-
     const subscription = await prisma.subscription.findUnique({
       where: { userId },
-      select: { plan: true, status: true },
+      select: { plan: true, status: true, stripePriceId: true },
     });
 
+    const isActive = subscription?.status === "ACTIVE" || subscription?.status === "TRIALING";
     const isPro =
-      subscription?.plan === "PRO" && (subscription?.status === "ACTIVE" || subscription?.status === "TRIALING");
+      Boolean(isActive) && (subscription?.plan === "PRO" || isProPrice({ priceId: subscription?.stripePriceId ?? null }));
     const limit = isPro ? PRO_LIMIT : FREE_LIMIT;
 
     const now = new Date();
@@ -160,13 +189,8 @@ export async function POST(req: Request) {
     });
 
     if (usage.usedCredits >= limit) {
-      return NextResponse.json({ error: "Usage limit reached" }, { status: 402 });
+      return errorJson({ status: 402, code: "USAGE_LIMIT_REACHED", message: "Usage limit reached" });
     }
-
-    await prisma.usageTracking.update({
-      where: { id: usage.id },
-      data: { usedCredits: { increment: 1 } },
-    });
 
     const { description, industry, tone, keywords } = parsed.data;
 
@@ -223,7 +247,7 @@ export async function POST(req: Request) {
 
     const parsedModel = modelResponseSchema.safeParse(jsonFromModel);
     if (!parsedModel.success) {
-      return NextResponse.json({ error: "Invalid model response" }, { status: 502 });
+      return errorJson({ status: 502, code: "BAD_GATEWAY", message: "Invalid model response" });
     }
 
     const normalized = parsedModel.data.suggestions.map((s) => ({
@@ -234,7 +258,7 @@ export async function POST(req: Request) {
     const uniqueNames = Array.from(new Set(normalized.map((s) => s.name)));
 
     if (uniqueNames.length === 0) {
-      return NextResponse.json(
+      return okJson(
         {
           suggestions: [],
           model,
@@ -288,7 +312,12 @@ export async function POST(req: Request) {
       })
     );
 
-    return NextResponse.json(
+    await prisma.usageTracking.update({
+      where: { id: usage.id },
+      data: { usedCredits: { increment: 1 } },
+    });
+
+    return okJson(
       {
         suggestions: enriched,
         model,
@@ -301,6 +330,6 @@ export async function POST(req: Request) {
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to generate";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return errorJson({ status: 500, code: "INTERNAL_ERROR", message });
   }
 }

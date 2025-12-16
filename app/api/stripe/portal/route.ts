@@ -8,7 +8,7 @@ import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
-export async function POST(req: Request) {
+export async function POST() {
   if (!env.STRIPE_SECRET_KEY) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 500 });
   }

@@ -13,7 +13,11 @@ export default function Navbar() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
+  const hideOnDashboard = pathname.startsWith("/dashboard");
+
   useEffect(() => {
+    if (hideOnDashboard) return;
+
     let rafId: number;
     const handleScroll = () => {
       rafId = requestAnimationFrame(() => {
@@ -26,9 +30,13 @@ export default function Navbar() {
       window.removeEventListener("scroll", handleScroll);
       cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [hideOnDashboard]);
 
   const isActive = (href: string) => pathname === href;
+
+  if (hideOnDashboard) {
+    return null;
+  }
 
   return (
     <nav

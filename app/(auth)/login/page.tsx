@@ -53,6 +53,21 @@ export default function LoginPage() {
       </div>
 
       <div className="relative mx-auto flex w-full max-w-md flex-col justify-center px-6 pb-16 pt-6 sm:min-h-[calc(100vh-6rem)]">
+        <div className="mb-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-zinc-200 transition-colors hover:text-zinc-50"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                d="M11.78 15.78a.75.75 0 0 1-1.06 0l-5-5a.75.75 0 0 1 0-1.06l5-5a.75.75 0 1 1 1.06 1.06L7.31 10l4.47 4.72a.75.75 0 0 1 0 1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Back to home
+          </Link>
+        </div>
         <Card className="border-white/10 bg-white/[0.06] text-zinc-50 shadow-[0_20px_80px_-40px_rgba(0,0,0,0.85)] backdrop-blur-xl">
           <CardHeader>
             <CardTitle>Log in to NamifyAI</CardTitle>
@@ -107,11 +122,17 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div className="flex justify-end">
+                <Link className="text-sm font-medium text-zinc-200 hover:text-zinc-50" href="/forgot-password">
+                  Forgot your password?
+                </Link>
+              </div>
+
               {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
               <Button
                 disabled={isLoading}
-                className="w-full bg-[#6b2a8f] text-white shadow-lg shadow-[#2b0a3d]/40 hover:bg-[#7b34a5]"
+                className="w-full bg-[#4a1667] text-white shadow-lg shadow-[#2b0a3d]/40 hover:bg-[#5b1b7c]"
                 type="submit"
               >
                 {isLoading ? "Signing in..." : "Sign in"}
@@ -121,7 +142,7 @@ export default function LoginPage() {
                 type="button"
                 disabled={isLoading}
                 variant="outline"
-                className="w-full border-white/15 bg-white/90 text-black hover:bg-white"
+                className="w-full border-white/15 bg-white/[0.06] text-zinc-50 backdrop-blur-xl hover:bg-white/[0.10]"
                 onClick={async () => {
                   setError(null);
                   setIsLoading(true);
@@ -140,9 +161,6 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-4 flex flex-col gap-2 text-sm text-zinc-300">
-              <Link className="font-medium text-zinc-50" href="/forgot-password">
-                Forgot your password?
-              </Link>
               <div>
                 Don&apos;t have an account?{" "}
                 <Link className="font-medium text-zinc-50" href="/register">
