@@ -8,7 +8,17 @@ import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+function getBaseUrl(req: Request) {
+  const configured = env.NEXT_PUBLIC_APP_URL;
+  if (configured) return configured;
+
+  const proto = req.headers.get("x-forwarded-proto") ?? "https";
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (!host) return null;
+  return `${proto}://${host}`;
+}
+
+export async function POST(req: Request) {
   if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRO_PRICE_ID) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 500 });
   }
@@ -51,7 +61,13 @@ export async function POST() {
     });
   }
 
-  const baseUrl = env.NEXT_PUBLIC_APP_URL;
+  const baseUrl = getBaseUrl(req);
+  if (!baseUrl) {
+    return NextResponse.json(
+      { error: "Missing NEXT_PUBLIC_APP_URL", details: { hint: "Set NEXT_PUBLIC_APP_URL to https://namify-ai.vercel.app" } },
+      { status: 500 },
+    );
+  }
 
   const resolvePriceId = async () => {
     const configured = env.STRIPE_PRO_PRICE_ID;
@@ -82,7 +98,7 @@ export async function POST() {
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: priceId }],
       allow_promotion_codes: true,
       subscription_data: {
         metadata: { userId },
