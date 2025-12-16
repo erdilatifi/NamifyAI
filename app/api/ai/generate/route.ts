@@ -1,5 +1,4 @@
 import dns from "node:dns/promises";
-import { randomUUID } from "node:crypto";
 import OpenAI from "openai";
 import { z } from "zod";
 
@@ -8,7 +7,6 @@ import { errorJson, getClientIp, okJson } from "@/lib/api";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
-import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -17,6 +15,7 @@ const inputSchema = z.object({
   industry: z.string().min(2).max(120),
   tone: z.string().min(2).max(40),
   keywords: z.string().min(1).max(200).optional(),
+  count: z.union([z.literal(2), z.literal(4), z.literal(6)]).optional(),
 });
 
 function getCurrentMonthPeriod(now: Date) {
@@ -26,29 +25,7 @@ function getCurrentMonthPeriod(now: Date) {
 }
 
 const FREE_LIMIT = 1;
-const PRO_LIMIT = 1_000_000_000;
-const STRIPE_METER_EVENT_NAME = "ai_tokens_used";
-
-async function reportStripeMeterUsage(params: { stripeCustomerId: string; tokens: number }) {
-  if (!env.STRIPE_SECRET_KEY) return;
-  if (!params.stripeCustomerId) return;
-  if (!Number.isFinite(params.tokens) || params.tokens <= 0) return;
-
-  const stripe = getStripe();
-
-  try {
-    await (stripe as any).billing.meterEvents.create({
-      event_name: STRIPE_METER_EVENT_NAME,
-      payload: {
-        stripe_customer_id: params.stripeCustomerId,
-        value: String(Math.round(params.tokens)),
-      },
-      identifier: randomUUID(),
-    });
-  } catch (err) {
-    console.error("Failed to report Stripe meter usage", err);
-  }
-}
+const PRO_LIMIT = 200;
 
 function isProPrice(params: { priceId: string | null }) {
   const configured = env.STRIPE_PRO_PRICE_ID;
@@ -63,7 +40,7 @@ const suggestionSchema = z.object({
 });
 
 const modelResponseSchema = z.object({
-  suggestions: z.array(suggestionSchema).min(5).max(30),
+  suggestions: z.array(suggestionSchema).min(1).max(30),
 });
 
 function normalizeName(name: string) {
@@ -194,24 +171,12 @@ export async function POST(req: Request) {
   try {
     const subscription = await prisma.subscription.findUnique({
       where: { userId },
-      select: { plan: true, status: true, stripePriceId: true, stripeCustomerId: true },
+      select: { plan: true, status: true, stripePriceId: true },
     });
 
     const isActive = subscription?.status === "ACTIVE" || subscription?.status === "TRIALING";
     const isPro = Boolean(isActive) && (subscription?.plan === "PRO" || isProPrice({ priceId: subscription?.stripePriceId ?? null }));
     const limit = isPro ? PRO_LIMIT : FREE_LIMIT;
-
-    if (!isPro) {
-      const totalUsed = await prisma.usageTracking.aggregate({
-        where: { userId },
-        _sum: { usedCredits: true },
-      });
-
-      const usedCreditsTotal = totalUsed._sum.usedCredits ?? 0;
-      if (usedCreditsTotal >= limit) {
-        return errorJson({ status: 402, code: "USAGE_LIMIT_REACHED", message: "Usage limit reached" });
-      }
-    }
 
     const now = new Date();
     const { start: periodStart, end: periodEnd } = getCurrentMonthPeriod(now);
@@ -223,11 +188,13 @@ export async function POST(req: Request) {
       select: { id: true, usedCredits: true },
     });
 
-    if (usage.usedCredits >= limit) {
+    const { description, industry, tone, keywords } = parsed.data;
+    const count = parsed.data.count ?? 4;
+    const creditCost = count / 2;
+
+    if (usage.usedCredits + creditCost > limit) {
       return errorJson({ status: 402, code: "USAGE_LIMIT_REACHED", message: "Usage limit reached" });
     }
-
-    const { description, industry, tone, keywords } = parsed.data;
 
     const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
@@ -242,7 +209,7 @@ export async function POST(req: Request) {
       tone,
       keywords: keywords ?? null,
       requirements: {
-        count: 15,
+        count,
         disallow: ["trademarked names", "existing famous companies"],
         includeDomainHint: true,
       },
@@ -265,14 +232,13 @@ export async function POST(req: Request) {
         {
           role: "user",
           content:
-            "Generate 10-20 name suggestions for the following. Return ONLY JSON with shape {\"suggestions\":[{\"name\":...,\"tagline\":...}]}. No markdown, no code fences.\n\n" +
+            `Generate exactly ${count} name suggestions for the following. Return ONLY JSON with shape {\"suggestions\":[{\"name\":...,\"tagline\":...}]}. No markdown, no code fences.\n\n` +
             JSON.stringify(user),
         },
       ],
     });
 
     const raw = completion.choices?.[0]?.message?.content ?? "";
-    const tokensUsed = (completion as unknown as { usage?: { total_tokens?: number } }).usage?.total_tokens ?? 0;
     const jsonFromModel = (() => {
       try {
         return JSON.parse(raw);
@@ -286,7 +252,7 @@ export async function POST(req: Request) {
       return errorJson({ status: 502, code: "BAD_GATEWAY", message: "Invalid model response" });
     }
 
-    const normalized = parsedModel.data.suggestions.map((s) => ({
+    const normalized = parsedModel.data.suggestions.slice(0, count).map((s) => ({
       ...s,
       name: normalizeName(s.name),
     }));
@@ -350,12 +316,8 @@ export async function POST(req: Request) {
 
     await prisma.usageTracking.update({
       where: { id: usage.id },
-      data: { usedCredits: { increment: 1 } },
+      data: { usedCredits: { increment: creditCost } },
     });
-
-    if (isPro && subscription?.stripeCustomerId) {
-      await reportStripeMeterUsage({ stripeCustomerId: subscription.stripeCustomerId, tokens: tokensUsed });
-    }
 
     return okJson(
       {

@@ -48,19 +48,10 @@ export async function GET() {
     select: { usedCredits: true, periodStart: true, periodEnd: true },
   });
 
-  const usedCredits = await (async () => {
-    if (isPro) return usage.usedCredits;
-    const totalUsed = await prisma.usageTracking.aggregate({
-      where: { userId },
-      _sum: { usedCredits: true },
-    });
-    return totalUsed._sum.usedCredits ?? 0;
-  })();
-
   return okJson({
     periodStart: usage.periodStart,
     periodEnd: usage.periodEnd,
-    usedCredits,
+    usedCredits: usage.usedCredits,
     limit,
     plan: isPro ? "PRO" : "FREE",
     status: subscription?.status ?? null,

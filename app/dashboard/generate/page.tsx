@@ -20,6 +20,7 @@ type GenerateInput = {
   industry: string;
   tone: string;
   keywords?: string;
+  count?: 2 | 4 | 6;
 };
 
 function getErrorMessage(body: unknown): string | undefined {
@@ -49,6 +50,7 @@ export default function GeneratePage() {
   const [industry, setIndustry] = useState("");
   const [tone, setTone] = useState("professional");
   const [keywords, setKeywords] = useState("");
+  const [count, setCount] = useState<2 | 4 | 6>(4);
 
   const [progress, setProgress] = useState(0);
 
@@ -213,7 +215,7 @@ export default function GeneratePage() {
         <CardHeader>
           <CardTitle className="text-zinc-50">Generate business names</CardTitle>
           <CardDescription>
-            Describe your business and get 10–20 brandable name ideas.
+            Describe your business and generate 2, 4, or 6 brandable name ideas.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -226,6 +228,7 @@ export default function GeneratePage() {
               industry,
               tone,
               keywords: keywords.length ? keywords : undefined,
+              count,
             });
           }}
           >
@@ -274,6 +277,35 @@ export default function GeneratePage() {
                 onChange={(e) => setKeywords(e.target.value)}
                 placeholder="e.g. rapid, cloud, finance"
               />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-zinc-200">Suggestions</label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[2, 4, 6].map((v) => {
+                  const value = v as 2 | 4 | 6;
+                  const active = count === value;
+                  return (
+                    <Button
+                      key={value}
+                      type="button"
+                      size="sm"
+                      variant={active ? "default" : "outline"}
+                      className={
+                        active
+                          ? "bg-[#6b2a8f] text-white hover:bg-[#7b34a5]"
+                          : "border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
+                      }
+                      onClick={() => setCount(value)}
+                    >
+                      {value}
+                    </Button>
+                  );
+                })}
+              </div>
+              <div className="mt-2 text-xs text-zinc-400">
+                2 suggestions costs 1 credit. 4 costs 2 credits. 6 costs 3 credits.
+              </div>
             </div>
 
             <Button
