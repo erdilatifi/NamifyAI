@@ -11,7 +11,7 @@ function getCurrentMonthPeriod(now: Date) {
   return { start, end };
 }
 
-const FREE_LIMIT = 20;
+const FREE_LIMIT = 1;
 const PRO_LIMIT = 200;
 
 function isProPrice(params: { priceId: string | null }) {
@@ -48,10 +48,19 @@ export async function GET() {
     select: { usedCredits: true, periodStart: true, periodEnd: true },
   });
 
+  const usedCredits = await (async () => {
+    if (isPro) return usage.usedCredits;
+    const totalUsed = await prisma.usageTracking.aggregate({
+      where: { userId },
+      _sum: { usedCredits: true },
+    });
+    return totalUsed._sum.usedCredits ?? 0;
+  })();
+
   return okJson({
     periodStart: usage.periodStart,
     periodEnd: usage.periodEnd,
-    usedCredits: usage.usedCredits,
+    usedCredits,
     limit,
     plan: isPro ? "PRO" : "FREE",
     status: subscription?.status ?? null,

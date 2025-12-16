@@ -49,6 +49,35 @@ function mapPlan(params: { status: ReturnType<typeof mapStatus>; priceId: string
   return isProPrice({ priceId: params.priceId, productId: params.productId }) ? "PRO" : "FREE";
 }
 
+async function resolveUserId(params: {
+  stripe: Stripe;
+  subscription: Stripe.Subscription;
+}): Promise<string | null> {
+  const fromSubscription = params.subscription.metadata?.userId;
+  if (fromSubscription) return fromSubscription;
+
+  const customerId = typeof params.subscription.customer === "string" ? params.subscription.customer : null;
+  if (!customerId) return null;
+
+  const fromDb = await prisma.subscription.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { userId: true },
+  });
+  if (fromDb?.userId) return fromDb.userId;
+
+  try {
+    const customer = await params.stripe.customers.retrieve(customerId);
+    if (customer && !("deleted" in customer && customer.deleted)) {
+      const metaUserId = (customer as Stripe.Customer).metadata?.userId;
+      if (metaUserId) return metaUserId;
+    }
+  } catch {
+    // ignore
+  }
+
+  return null;
+}
+
 export async function POST(req: Request) {
   if (!env.STRIPE_SECRET_KEY || !env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 500 });
@@ -97,41 +126,41 @@ export async function POST(req: Request) {
     const subscriptionWithPeriod = subscription as unknown as Stripe.Subscription & {
       current_period_end?: number;
     };
-    const userId = subscription.metadata?.userId;
-
-    if (userId) {
-      const itemPrice = subscription.items.data[0]?.price ?? null;
-      const priceId = itemPrice?.id ?? null;
-      const productId =
-        typeof itemPrice?.product === "string" ? itemPrice.product : itemPrice?.product?.id ?? null;
-      const periodEnd = subscriptionWithPeriod.current_period_end
-        ? new Date(subscriptionWithPeriod.current_period_end * 1000)
-        : null;
-
-      const status = mapStatus(subscription.status);
-      const plan = mapPlan({ status, priceId, productId });
-
-      await prisma.subscription.upsert({
-        where: { userId },
-        create: {
-          userId,
-          plan,
-          status,
-          stripeCustomerId: typeof subscription.customer === "string" ? subscription.customer : null,
-          stripeSubscriptionId: subscription.id,
-          stripePriceId: priceId,
-          currentPeriodEnd: periodEnd,
-        },
-        update: {
-          plan,
-          status,
-          stripeCustomerId: typeof subscription.customer === "string" ? subscription.customer : undefined,
-          stripeSubscriptionId: subscription.id,
-          stripePriceId: priceId,
-          currentPeriodEnd: periodEnd,
-        },
-      });
+    const userId = await resolveUserId({ stripe, subscription });
+    if (!userId) {
+      return NextResponse.json({ received: true });
     }
+
+    const itemPrice = subscription.items.data[0]?.price ?? null;
+    const priceId = itemPrice?.id ?? null;
+    const productId = typeof itemPrice?.product === "string" ? itemPrice.product : itemPrice?.product?.id ?? null;
+    const periodEnd = subscriptionWithPeriod.current_period_end
+      ? new Date(subscriptionWithPeriod.current_period_end * 1000)
+      : null;
+
+    const status = mapStatus(subscription.status);
+    const plan = mapPlan({ status, priceId, productId });
+
+    await prisma.subscription.upsert({
+      where: { userId },
+      create: {
+        userId,
+        plan,
+        status,
+        stripeCustomerId: typeof subscription.customer === "string" ? subscription.customer : null,
+        stripeSubscriptionId: subscription.id,
+        stripePriceId: priceId,
+        currentPeriodEnd: periodEnd,
+      },
+      update: {
+        plan,
+        status,
+        stripeCustomerId: typeof subscription.customer === "string" ? subscription.customer : undefined,
+        stripeSubscriptionId: subscription.id,
+        stripePriceId: priceId,
+        currentPeriodEnd: periodEnd,
+      },
+    });
   }
 
   return NextResponse.json({ received: true });
