@@ -125,7 +125,28 @@ async function rdapHasDomainRegistration(fqdn: string) {
     );
 
     if (res.status === 404) return false;
-    if (res.ok) return true;
+    if (res.ok) {
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("json")) return null;
+
+      const data = (await res.json().catch(() => null)) as
+        | null
+        | {
+            errorCode?: number;
+            ldhName?: string;
+            handle?: string;
+            objectClassName?: string;
+          };
+
+      if (!data) return null;
+      if (data.errorCode === 404) return false;
+
+      if (typeof data.ldhName === "string" && data.ldhName.length > 0) return true;
+      if (typeof data.handle === "string" && data.handle.length > 0) return true;
+      if (data.objectClassName === "domain") return true;
+
+      return null;
+    }
 
     return null;
   } catch {
@@ -234,7 +255,7 @@ export async function POST(req: Request) {
     const model = process.env.OPENAI_NAME_MODEL || "gpt-4o-mini";
 
     const system =
-      "You are NamifyAI, an expert brand strategist. Generate short, brandable, startup-ready business names. Avoid trademarks and well-known brand names. Prefer 1-2 words, easy to pronounce, memorable. Provide optional tagline. Output ONLY valid JSON.";
+      "You are an expert brand strategist. Generate short, brandable, startup-ready business names. Avoid trademarks and well-known brand names. Prefer 1-2 words, easy to pronounce, memorable. Provide optional tagline. Output ONLY valid JSON.";
 
     const user = {
       description,

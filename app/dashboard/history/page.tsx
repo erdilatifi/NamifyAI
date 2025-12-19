@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,8 +26,24 @@ type NamesHistoryResponse = {
 export default function HistoryPage() {
   const pageSize = 10;
   const [page, setPage] = useState(1);
+  const queryClient = useQueryClient();
 
   const queryKey = useMemo(() => ["names", "history", page], [page]);
+
+  const removeMutation = useMutation({
+    mutationFn: async (input: { id: string }) => {
+      const res = await fetch("/api/names/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ generatedNameId: input.id }),
+      });
+      if (!res.ok) throw new Error("Failed");
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["names", "history"] });
+      await queryClient.invalidateQueries({ queryKey: ["names"] });
+    },
+  });
 
   const namesQuery = useQuery({
     queryKey,
@@ -75,8 +91,20 @@ export default function HistoryPage() {
                         {new Date(item.createdAt).toLocaleString()} · {item.industry} · {item.tone}
                       </div>
                     </div>
-                    <div className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-xs text-zinc-300">
-                      {item.isFavorite ? "Favorite" : "Saved"}
+                    <div className="shrink-0 flex items-center gap-2">
+                      <div className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-xs text-zinc-300">
+                        {item.isFavorite ? "Favorite" : "Saved"}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
+                        disabled={removeMutation.isPending}
+                        onClick={() => removeMutation.mutate({ id: item.id })}
+                      >
+                        Remove
+                      </Button>
                     </div>
                   </div>
                 </div>

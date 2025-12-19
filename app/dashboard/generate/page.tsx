@@ -13,8 +13,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
-const NASS_CORPORATE_REGISTRATIONS_URL = "https://www.nass.org/business-services/corporate-registration";
-
 type GenerateInput = {
   description: string;
   industry: string;
@@ -44,11 +42,6 @@ type Generated = {
   domains?: Array<{ fqdn: string; status: "taken" | "likely_available" | "unknown" }>;
   availableDomains?: string[];
 };
-
-function buildManualDomainCheckUrl(fqdn: string) {
-  const encoded = encodeURIComponent(fqdn);
-  return `https://www.namecheap.com/domains/registration/results/?domain=${encoded}`;
-}
 
 export default function GeneratePage() {
   const [description, setDescription] = useState("");
@@ -364,7 +357,7 @@ export default function GeneratePage() {
                   {r.tagline ? <div className="mt-1 text-sm text-zinc-300">{r.tagline}</div> : null}
                   {r.availableDomains && r.availableDomains.length ? (
                     <div className="mt-2 text-xs text-zinc-300">
-                      <div className="font-medium text-zinc-200">Available domains</div>
+                      <div className="font-medium text-zinc-200">Likely available domains</div>
                       <div className="mt-1 flex flex-wrap gap-1">
                         {r.availableDomains.slice(0, 6).map((d) => (
                           <span key={d} className="rounded border border-white/10 bg-white/5 px-2 py-0.5 text-zinc-200">
@@ -372,6 +365,7 @@ export default function GeneratePage() {
                           </span>
                         ))}
                       </div>
+                      <div className="mt-1 text-zinc-400">Verify before purchase or registration.</div>
                     </div>
                   ) : null}
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -385,30 +379,6 @@ export default function GeneratePage() {
                       type="button"
                     >
                       Copy
-                    </Button>
-                    <Button asChild variant="outline" size="sm" className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10">
-                      <a
-                        href={NASS_CORPORATE_REGISTRATIONS_URL}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Check business registration
-                      </a>
-                    </Button>
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
-                      disabled={!(r.availableDomains?.[0] || r.domains?.[0]?.fqdn)}
-                    >
-                      <a
-                        href={buildManualDomainCheckUrl((r.availableDomains?.[0] || r.domains?.find((d) => d.status !== "taken")?.fqdn) as string)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Check domain manually
-                      </a>
                     </Button>
                     <Button
                       variant="outline"
