@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
-import { getStripe } from "@/lib/stripe";
+import { getStripeClient } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 500 });
   }
 
-  const stripe = getStripe();
+  const stripe = getStripeClient();
 
   const session = await auth();
   if (!session?.user?.id || !session.user.email) {

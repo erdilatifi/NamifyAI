@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## NamifyAI
 
-## Getting Started
+NamifyAI is a Next.js app for generating brandable business names, saving favorites, and managing usage/billing.
 
-First, run the development server:
+### Tech stack
+
+- **Frontend**
+  - Next.js (App Router)
+  - React
+  - Tailwind CSS
+  - Radix UI primitives
+  - TanStack React Query (client data fetching)
+  - Framer Motion (marketing animations)
+
+- **Backend**
+  - Next.js Route Handlers (`app/api/*`)
+  - Prisma ORM
+  - PostgreSQL
+
+- **Auth**
+  - NextAuth (Credentials + optional Google OAuth)
+
+- **Email**
+  - Resend (password reset emails)
+
+- **AI**
+  - OpenAI API
+
+- **Billing**
+  - Stripe (checkout, billing portal, webhook)
+
+### Project structure
+
+- `app/(marketing)`
+  - Public marketing pages (home, pricing sections)
+- `app/(auth)`
+  - Auth pages (login, register, forgot/reset password)
+- `app/dashboard`
+  - Logged-in app (generate, history, billing)
+- `app/api`
+  - Server routes (AI generation, auth endpoints, names CRUD, usage, Stripe)
+- `components`
+  - Shared UI components (navbar, UI primitives)
+- `lib`
+  - Shared server/client utilities (auth, prisma, env, stripe, rate limiting)
+- `prisma`
+  - Prisma schema and migrations
+
+### Key API routes
+
+- **Auth**
+  - `POST /api/auth/register`
+  - `POST /api/auth/forgot-password` (sends reset email via Resend)
+  - `POST /api/auth/reset-password`
+
+- **AI + names**
+  - `POST /api/ai/generate`
+  - `GET /api/names`
+  - `POST /api/names/save`
+  - `POST /api/names/delete`
+  - `POST /api/favorites` (favorites/save helpers)
+
+- **Usage + billing**
+  - `GET /api/usage`
+  - `GET /api/usage/weekly`
+  - `POST /api/stripe/checkout`
+  - `POST /api/stripe/portal`
+  - `POST /api/stripe/webhook`
+
+### Database (Prisma)
+
+See `prisma/schema.prisma` for the full source of truth. Core models used by the app include:
+
+- `user`: accounts
+- `account`: OAuth linkage (Google)
+- `session`: session records (if enabled/used)
+- `PasswordResetToken`: password reset tokens
+- `GeneratedName`: generated/saved names history
+- `UsageTracking`: monthly usage tracking
+- `Subscription` and `StripeWebhookEvent`: billing state and webhook idempotency
+
+## Local development
+
+### 1) Install dependencies
+
+```bash
+npm install
+```
+
+### 2) Configure environment variables
+
+Copy the example env file:
+
+```bash
+copy .env.example .env
+```
+
+Fill in required values (see `.env.example` for the full list).
+
+### 3) Prisma
+
+Run migrations and generate the Prisma client:
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+```
+
+### 4) Start the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Email (Resend) setup notes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Password reset emails are sent via Resend when `RESEND_API_KEY` is set.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- For local/dev, you can use:
+  - `RESEND_FROM="NamifyAI <onboarding@resend.dev>"`
+- For production, set `RESEND_FROM` to a sender on a **verified domain** in your Resend dashboard.

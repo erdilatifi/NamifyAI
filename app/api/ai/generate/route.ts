@@ -9,37 +9,37 @@ import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
-let rdapServersByTld: Map<string, string[]> | null = null;
-let rdapBootstrapLoadedAt = 0;
+let rdapServersByTldCache: Map<string, string[]> | null = null;
+let rdapBootstrapLoadedAtMs = 0;
 
 async function getRdapServersByTld() {
   const now = Date.now();
-  if (rdapServersByTld && now - rdapBootstrapLoadedAt < 24 * 60 * 60 * 1000) {
-    return rdapServersByTld;
+  if (rdapServersByTldCache && now - rdapBootstrapLoadedAtMs < 24 * 60 * 60 * 1000) {
+    return rdapServersByTldCache;
   }
 
   const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), 3000);
+  const timeoutId = setTimeout(() => controller.abort(), 3000);
   try {
-    const res = await fetch("https://data.iana.org/rdap/dns.json", {
+    const response = await fetch("https://data.iana.org/rdap/dns.json", {
       method: "GET",
       signal: controller.signal,
       headers: { accept: "application/json" },
       cache: "no-store",
     });
 
-    if (!res.ok) return rdapServersByTld;
+    if (!response.ok) return rdapServersByTldCache;
 
-    const data = (await res.json().catch(() => null)) as
+    const payload = (await response.json().catch(() => null)) as
       | null
       | {
           services?: Array<[string[], string[]]>;
         };
 
-    if (!data?.services) return rdapServersByTld;
+    if (!payload?.services) return rdapServersByTldCache;
 
     const map = new Map<string, string[]>();
-    for (const entry of data.services) {
+    for (const entry of payload.services) {
       const tlds = entry?.[0] ?? [];
       const servers = entry?.[1] ?? [];
       for (const tld of tlds) {
@@ -48,13 +48,13 @@ async function getRdapServersByTld() {
       }
     }
 
-    rdapServersByTld = map;
-    rdapBootstrapLoadedAt = now;
-    return rdapServersByTld;
+    rdapServersByTldCache = map;
+    rdapBootstrapLoadedAtMs = now;
+    return rdapServersByTldCache;
   } catch {
-    return rdapServersByTld;
+    return rdapServersByTldCache;
   } finally {
-    clearTimeout(t);
+    clearTimeout(timeoutId);
   }
 }
 
@@ -160,10 +160,10 @@ function toDomainLabel(name: string) {
 
 async function rdapHasDomainRegistration(fqdn: string) {
   const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), 2500);
+  const timeoutId = setTimeout(() => controller.abort(), 2500);
   try {
     const base = (await getRdapBaseUrlForFqdn(fqdn)) ?? "https://rdap.org";
-    const res = await fetch(`${base}/domain/${encodeURIComponent(fqdn)}`,
+    const response = await fetch(`${base}/domain/${encodeURIComponent(fqdn)}`,
       {
         method: "GET",
         signal: controller.signal,
@@ -173,12 +173,12 @@ async function rdapHasDomainRegistration(fqdn: string) {
       }
     );
 
-    if (res.status === 404) return false;
-    if (res.ok) {
-      const ct = res.headers.get("content-type") || "";
+    if (response.status === 404) return false;
+    if (response.ok) {
+      const ct = response.headers.get("content-type") || "";
       if (!ct.includes("json")) return null;
 
-      const data = (await res.json().catch(() => null)) as
+      const payload = (await response.json().catch(() => null)) as
         | null
         | {
             errorCode?: number;
@@ -187,12 +187,12 @@ async function rdapHasDomainRegistration(fqdn: string) {
             objectClassName?: string;
           };
 
-      if (!data) return null;
-      if (data.errorCode === 404) return false;
+      if (!payload) return null;
+      if (payload.errorCode === 404) return false;
 
-      if (typeof data.ldhName === "string" && data.ldhName.length > 0) return true;
-      if (typeof data.handle === "string" && data.handle.length > 0) return true;
-      if (data.objectClassName === "domain") return true;
+      if (typeof payload.ldhName === "string" && payload.ldhName.length > 0) return true;
+      if (typeof payload.handle === "string" && payload.handle.length > 0) return true;
+      if (payload.objectClassName === "domain") return true;
 
       return null;
     }
@@ -201,7 +201,7 @@ async function rdapHasDomainRegistration(fqdn: string) {
   } catch {
     return null;
   } finally {
-    clearTimeout(t);
+    clearTimeout(timeoutId);
   }
 }
 
@@ -337,10 +337,10 @@ export async function POST(req: Request) {
       ],
     });
 
-    const raw = completion.choices?.[0]?.message?.content ?? "";
+    const rawContent = completion.choices?.[0]?.message?.content ?? "";
     const jsonFromModel = (() => {
       try {
-        return JSON.parse(raw);
+        return JSON.parse(rawContent);
       } catch {
         return null;
       }

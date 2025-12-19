@@ -17,10 +17,6 @@ export default function Navbar() {
   const hideOnDashboard = pathname.startsWith("/dashboard");
 
   useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
     if (hideOnDashboard) return;
 
     let rafId: number;

@@ -2,7 +2,7 @@ import Stripe from "stripe";
 
 import { env } from "@/lib/env";
 
-export function getStripe() {
+export function getStripeClient() {
   if (!env.STRIPE_SECRET_KEY) {
     throw new Error("Missing STRIPE_SECRET_KEY");
   }
