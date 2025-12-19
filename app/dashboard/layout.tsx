@@ -59,6 +59,9 @@ export default async function DashboardLayout({
                 <Button asChild variant="ghost" className="w-full justify-start text-zinc-300 hover:bg-white/5 hover:text-zinc-50">
                   <Link href="/dashboard/billing">Billing</Link>
                 </Button>
+                <Button asChild variant="ghost" className="w-full justify-start text-zinc-300 hover:bg-white/5 hover:text-zinc-50">
+                  <a href="https://namify-ai.vercel.app/">Back to site</a>
+                </Button>
               </nav>
 
               <div className="mt-4">

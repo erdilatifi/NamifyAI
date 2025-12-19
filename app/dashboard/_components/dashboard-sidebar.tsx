@@ -111,6 +111,15 @@ export default function DashboardSidebar({ email }: { email: string }) {
                 </Button>
               );
             })}
+
+            <Button
+              asChild
+              variant="ghost"
+              className="w-full justify-start text-zinc-300 hover:bg-white/5 hover:text-zinc-50"
+              size="sm"
+            >
+              <a href="https://namify-ai.vercel.app/">Back to site</a>
+            </Button>
           </nav>
         </div>
 
