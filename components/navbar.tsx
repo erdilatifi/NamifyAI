@@ -9,11 +9,16 @@ import { useSession, signOut } from "@/lib/auth-client";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
 
   const hideOnDashboard = pathname.startsWith("/dashboard");
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (hideOnDashboard) return;
@@ -53,6 +58,39 @@ export default function Navbar() {
           <Link href="/" className="text-sm font-semibold tracking-tight text-zinc-50">
             NamifyAI
           </Link>
+
+          <button
+            type="button"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            className="inline-flex items-center justify-center rounded-md border border-white/15 bg-white/5 p-2 text-zinc-50 hover:bg-white/10 md:hidden"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {mobileMenuOpen ? (
+                <>
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </>
+              ) : (
+                <>
+                  <path d="M4 6h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 18h16" />
+                </>
+              )}
+            </svg>
+          </button>
 
           <div className="hidden items-center gap-6 md:flex">
             <Link
@@ -115,6 +153,71 @@ export default function Navbar() {
             )}
           </div>
         </div>
+
+        {mobileMenuOpen ? (
+          <div className="border-t border-white/10 px-6 pb-4 md:hidden">
+            <div className="flex flex-col gap-3 pt-4">
+              <Link
+                href="/"
+                className={
+                  isActive("/")
+                    ? "text-sm font-semibold text-zinc-50"
+                    : "text-sm font-semibold text-zinc-300 hover:text-zinc-50"
+                }
+              >
+                Home
+              </Link>
+              <Link
+                href="/#pricing"
+                className="text-sm font-semibold text-zinc-300 hover:text-zinc-50"
+              >
+                Pricing
+              </Link>
+              <Link
+                href="/dashboard"
+                className={
+                  pathname.startsWith("/dashboard")
+                    ? "text-sm font-semibold text-zinc-50"
+                    : "text-sm font-semibold text-zinc-300 hover:text-zinc-50"
+                }
+              >
+                Dashboard
+              </Link>
+
+              <div className="pt-2">
+                {status === "loading" ? (
+                  <div className="text-sm text-zinc-400">Loading...</div>
+                ) : session?.user ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-white/15 bg-white/5 text-zinc-50 hover:bg-white/10"
+                    onClick={async () => {
+                      await signOut({ redirect: false });
+                      router.push("/login");
+                      router.refresh();
+                    }}
+                  >
+                    Sign out
+                  </Button>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="w-full text-zinc-200 hover:bg-white/10 hover:text-zinc-50"
+                    >
+                      <Link href="/login">Log in</Link>
+                    </Button>
+                    <Button asChild className="w-full bg-[#2b0a3d] text-white hover:bg-[#3a0f55]">
+                      <Link href="/register">Start free</Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </nav>
   );
