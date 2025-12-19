@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  type GeneratedNameWithFavorite = {
+  type GeneratedNameRow = {
     id: string;
     name: string;
     description: string;
@@ -25,7 +25,6 @@ export async function GET(req: Request) {
     tone: string;
     keywords: string | null;
     createdAt: Date;
-    favorites: Array<{ id: string }>;
   };
 
   const url = new URL(req.url);
@@ -53,20 +52,15 @@ export async function GET(req: Request) {
         tone: true,
         keywords: true,
         createdAt: true,
-        favorites: {
-          where: { userId: session.user.id },
-          select: { id: true },
-          take: 1,
-        },
       },
-    }) as Promise<GeneratedNameWithFavorite[]>,
+    }) as Promise<GeneratedNameRow[]>,
   ]);
 
   return NextResponse.json({
     total,
     page,
     pageSize: limit,
-    items: items.map((x: GeneratedNameWithFavorite) => ({
+    items: items.map((x: GeneratedNameRow) => ({
       id: x.id,
       name: x.name,
       description: x.description,
@@ -74,7 +68,6 @@ export async function GET(req: Request) {
       tone: x.tone,
       keywords: x.keywords,
       createdAt: x.createdAt,
-      isFavorite: x.favorites.length > 0,
     })),
   });
 }

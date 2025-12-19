@@ -21,7 +21,6 @@ model user {
   accounts      account[]
 
   generatedNames GeneratedName[]
-  favorites      Favorite[]
   subscription   Subscription?
   usageTracking  UsageTracking[]
 
@@ -100,21 +99,7 @@ model GeneratedName {
   createdAt   DateTime @default(now())
 
   user user @relation(fields: [userId], references: [id], onDelete: Cascade)
-  favorites Favorite[]
 
-  @@index([userId, createdAt])
-}
-
-model Favorite {
-  id              String   @id @default(cuid())
-  userId          String
-  generatedNameId String
-  createdAt       DateTime @default(now())
-
-  user          user          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  generatedName GeneratedName @relation(fields: [generatedNameId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, generatedNameId])
   @@index([userId, createdAt])
 }
 

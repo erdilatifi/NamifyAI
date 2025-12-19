@@ -56,7 +56,6 @@ export default function GeneratePage() {
 
   const [results, setResults] = useState<Generated[]>([]);
   const [savedIdsByName, setSavedIdsByName] = useState<Record<string, string>>({});
-  const [favoritedByName, setFavoritedByName] = useState<Record<string, boolean>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [limitReached, setLimitReached] = useState(false);
 
@@ -101,7 +100,6 @@ export default function GeneratePage() {
     onSuccess: (data) => {
       setResults(data.suggestions);
       setSavedIdsByName({});
-      setFavoritedByName({});
       setProgress(100);
       window.setTimeout(() => setProgress(0), 500);
     },
@@ -148,33 +146,6 @@ export default function GeneratePage() {
       setActionError("Unable to save name.");
       toast.error("Save failed", {
         description: err instanceof Error ? err.message : "Unable to save name.",
-      });
-    },
-  });
-
-  const favoriteMutation = useMutation({
-    mutationFn: async (input: { name: string; favorite: boolean }) => {
-      const generatedNameId = savedIdsByName[input.name];
-      if (!generatedNameId) {
-        throw new Error("Not saved");
-      }
-      const res = await fetch("/api/names/favorite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ generatedNameId, favorite: input.favorite }),
-      });
-      if (!res.ok) throw new Error("Failed");
-    },
-    onSuccess: (_, variables) => {
-      setFavoritedByName((prev) => ({ ...prev, [variables.name]: variables.favorite }));
-      toast.success(variables.favorite ? "Added to favorites" : "Removed from favorites", {
-        description: variables.name,
-      });
-    },
-    onError: (err) => {
-      setActionError("To favorite a name, save it first.");
-      toast.error("Favorite failed", {
-        description: err instanceof Error ? err.message : "To favorite a name, save it first.",
       });
     },
   });
@@ -306,13 +277,54 @@ export default function GeneratePage() {
               </div>
             </div>
 
-            <Button
-              disabled={generateMutation.isPending}
-              className="bg-[#6b2a8f] text-white shadow-lg shadow-[#2b0a3d]/40 hover:bg-[#7b34a5]"
-              type="submit"
-            >
-              {generateMutation.isPending ? "Generating..." : "Generate"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                disabled={generateMutation.isPending}
+                className="w-[90%] bg-[#6b2a8f] text-white shadow-lg shadow-[#2b0a3d]/40 hover:bg-[#7b34a5]"
+                type="submit"
+              >
+                {generateMutation.isPending ? "Generating..." : "Generate"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={generateMutation.isPending}
+                className="w-[10%] border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
+                onClick={() => {
+                  setDescription("");
+                  setIndustry("");
+                  setTone("professional");
+                  setKeywords("");
+                  setCount(4);
+
+                  setResults([]);
+                  setSavedIdsByName({});
+                  setActionError(null);
+                  setLimitReached(false);
+                  setProgress(0);
+
+                  if (progressIntervalRef.current) {
+                    window.clearInterval(progressIntervalRef.current);
+                    progressIntervalRef.current = null;
+                  }
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                >
+                  <path d="M21 12a9 9 0 1 1-3-6.7" />
+                  <path d="M21 3v6h-6" />
+                </svg>
+              </Button>
+            </div>
 
             {generateMutation.isError ? (
               <p className="text-sm text-red-600">Unable to generate names right now.</p>
@@ -392,20 +404,6 @@ export default function GeneratePage() {
                       type="button"
                     >
                       {savedIdsByName[r.name] ? "Saved" : "Save"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
-                      disabled={favoriteMutation.isPending}
-                      onClick={() => {
-                        setActionError(null);
-                        const next = !(favoritedByName[r.name] ?? false);
-                        favoriteMutation.mutate({ name: r.name, favorite: next });
-                      }}
-                      type="button"
-                    >
-                      {favoritedByName[r.name] ? "Unfavorite" : "Favorite"}
                     </Button>
                   </div>
                 </div>

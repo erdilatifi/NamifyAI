@@ -1,4 +1,3 @@
-import dns from "node:dns/promises";
 import OpenAI from "openai";
 import { z } from "zod";
 
@@ -9,6 +8,67 @@ import { prisma } from "@/lib/prisma";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
+
+let rdapServersByTld: Map<string, string[]> | null = null;
+let rdapBootstrapLoadedAt = 0;
+
+async function getRdapServersByTld() {
+  const now = Date.now();
+  if (rdapServersByTld && now - rdapBootstrapLoadedAt < 24 * 60 * 60 * 1000) {
+    return rdapServersByTld;
+  }
+
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 3000);
+  try {
+    const res = await fetch("https://data.iana.org/rdap/dns.json", {
+      method: "GET",
+      signal: controller.signal,
+      headers: { accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) return rdapServersByTld;
+
+    const data = (await res.json().catch(() => null)) as
+      | null
+      | {
+          services?: Array<[string[], string[]]>;
+        };
+
+    if (!data?.services) return rdapServersByTld;
+
+    const map = new Map<string, string[]>();
+    for (const entry of data.services) {
+      const tlds = entry?.[0] ?? [];
+      const servers = entry?.[1] ?? [];
+      for (const tld of tlds) {
+        if (!tld) continue;
+        map.set(String(tld).toLowerCase(), servers);
+      }
+    }
+
+    rdapServersByTld = map;
+    rdapBootstrapLoadedAt = now;
+    return rdapServersByTld;
+  } catch {
+    return rdapServersByTld;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function getRdapBaseUrlForFqdn(fqdn: string) {
+  const parts = fqdn.toLowerCase().split(".").filter(Boolean);
+  const tld = parts.length ? parts[parts.length - 1] : null;
+  if (!tld) return null;
+
+  const map = await getRdapServersByTld();
+  const servers = map?.get(tld) ?? null;
+  const base = servers?.[0] ?? null;
+  if (!base) return null;
+  return base.replace(/\/$/, "");
+}
 
 const inputSchema = z.object({
   description: z.string().min(10).max(2000),
@@ -98,23 +158,12 @@ function toDomainLabel(name: string) {
     .replace(/-+/g, "-");
 }
 
-async function resolvesAnyRecord(hostname: string) {
-  try {
-    const res = await Promise.race([
-      dns.resolveAny(hostname),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 1800)),
-    ]);
-    return Array.isArray(res) && res.length > 0;
-  } catch {
-    return false;
-  }
-}
-
 async function rdapHasDomainRegistration(fqdn: string) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), 2500);
   try {
-    const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(fqdn)}`,
+    const base = (await getRdapBaseUrlForFqdn(fqdn)) ?? "https://rdap.org";
+    const res = await fetch(`${base}/domain/${encodeURIComponent(fqdn)}`,
       {
         method: "GET",
         signal: controller.signal,
@@ -170,11 +219,7 @@ async function checkDomains(baseLabel: string) {
         return { fqdn, status: "likely_available" as const };
       }
 
-      const hasDns = await resolvesAnyRecord(fqdn);
-      return {
-        fqdn,
-        status: hasDns ? ("taken" as const) : ("unknown" as const),
-      };
+      return { fqdn, status: "unknown" as const };
     })
   );
 
@@ -255,7 +300,7 @@ export async function POST(req: Request) {
     const model = process.env.OPENAI_NAME_MODEL || "gpt-4o-mini";
 
     const system =
-      "You are an expert brand strategist. Generate short, brandable, startup-ready business names. Avoid trademarks and well-known brand names. Prefer 1-2 words, easy to pronounce, memorable. Provide optional tagline. Output ONLY valid JSON.";
+      "You are an expert brand strategist. Generate short, brandable, startup-ready business names. Avoid trademarks and well-known brand names. Prefer 1-2 words, easy to pronounce, memorable. Prefer made-up or blended words over common dictionary terms. Aim for names that are more likely to have open domain options across popular TLDs. Provide optional tagline. Output ONLY valid JSON.";
 
     const user = {
       description,

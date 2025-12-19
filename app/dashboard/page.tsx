@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +21,6 @@ type NamesResponse = {
     id: string;
     name: string;
     createdAt: string;
-    isFavorite: boolean;
   }>;
 };
 
@@ -29,9 +28,6 @@ type WeeklyUsageResponse = {
   days: Array<{ date: string; count: number }>;
 };
 
-type FavoritesCountResponse = {
-  count: number;
-};
 
 function WeeklyProgressChart({ days }: { days: WeeklyUsageResponse["days"] }) {
   const labels = days.map((d) => {
@@ -161,8 +157,6 @@ function formatRange(start?: string, end?: string) {
 }
 
 export default function DashboardHomePage() {
-  const queryClient = useQueryClient();
-
   const usageQuery = useQuery({
     queryKey: ["usage"],
     queryFn: async (): Promise<UsageResponse> => {
@@ -175,7 +169,7 @@ export default function DashboardHomePage() {
   const namesQuery = useQuery({
     queryKey: ["names"],
     queryFn: async (): Promise<NamesResponse> => {
-      const res = await fetch("/api/names?limit=8", { cache: "no-store" });
+      const res = await fetch("/api/names?limit=3", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -190,34 +184,10 @@ export default function DashboardHomePage() {
     },
   });
 
-  const favoritesCountQuery = useQuery({
-    queryKey: ["favorites-count"],
-    queryFn: async (): Promise<FavoritesCountResponse> => {
-      const res = await fetch("/api/favorites/count", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
-  });
-
-  const favoriteMutation = useMutation({
-    mutationFn: async (input: { id: string; favorite: boolean }) => {
-      const res = await fetch("/api/names/favorite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ generatedNameId: input.id, favorite: input.favorite }),
-      });
-      if (!res.ok) throw new Error("Failed");
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["names"] });
-    },
-  });
-
   const isDashboardLoading =
     usageQuery.isLoading ||
     namesQuery.isLoading ||
-    weeklyUsageQuery.isLoading ||
-    favoritesCountQuery.isLoading;
+    weeklyUsageQuery.isLoading;
 
   if (isDashboardLoading) {
     return <DashboardHomeSkeleton />;
@@ -233,7 +203,6 @@ export default function DashboardHomePage() {
     : 0;
 
   const savedCount = namesQuery.data?.items?.length ?? 0;
-  const favoritesCount = favoritesCountQuery.data?.count ?? 0;
 
   const billingRange = formatRange(usageQuery.data?.periodStart, usageQuery.data?.periodEnd);
 
@@ -350,17 +319,8 @@ export default function DashboardHomePage() {
                             {new Date(item.createdAt).toLocaleDateString()}
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
-                          disabled={favoriteMutation.isPending}
-                          onClick={() => {
-                            favoriteMutation.mutate({ id: item.id, favorite: !item.isFavorite });
-                          }}
-                          type="button"
-                        >
-                          {item.isFavorite ? "Unfavorite" : "Favorite"}
+                        <Button asChild variant="outline" size="sm" className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10">
+                          <Link href="/dashboard/history">View</Link>
                         </Button>
                       </div>
                     ))}
@@ -400,11 +360,11 @@ export default function DashboardHomePage() {
                 </div>
 
                 <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Favorites</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Recent saves</div>
                   <div className="mt-1 text-sm font-semibold text-zinc-50">
-                    {favoritesCountQuery.isLoading ? "…" : favoritesCount}
+                    {namesQuery.isLoading ? "…" : savedCount}
                   </div>
-                  <div className="mt-1 text-xs text-zinc-400">Keep your shortlist tight</div>
+                  <div className="mt-1 text-xs text-zinc-400">Your latest saved ideas</div>
                 </div>
               </div>
 
@@ -470,20 +430,14 @@ export default function DashboardHomePage() {
           <Card className="border-white/10 bg-white/[0.04] shadow-[0_20px_70px_-50px_rgba(0,0,0,0.85)] backdrop-blur-xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-zinc-300">Saved this view</CardTitle>
-              <CardDescription className="text-xs text-zinc-400">Saved + favorites</CardDescription>
+              <CardDescription className="text-xs text-zinc-400">Saved</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                   <div className="text-xs text-zinc-400">Recently saved</div>
                   <div className="mt-1 text-xl font-semibold tracking-tight text-zinc-50">
                     {namesQuery.isLoading ? "…" : savedCount}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                  <div className="text-xs text-zinc-400">Favorites</div>
-                  <div className="mt-1 text-xl font-semibold tracking-tight text-zinc-50">
-                    {favoritesCountQuery.isLoading ? "…" : favoritesCount}
                   </div>
                 </div>
               </div>

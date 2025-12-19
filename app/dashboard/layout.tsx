@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
 import DashboardSidebar from "@/app/dashboard/_components/dashboard-sidebar";
+import SignOutButton from "@/app/dashboard/_components/sign-out-button";
 
 export default async function DashboardLayout({
   children,
@@ -47,7 +48,7 @@ export default async function DashboardLayout({
 
               <nav className="mt-4 grid gap-2">
                 <Button asChild variant="ghost" className="w-full justify-start text-zinc-300 hover:bg-white/5 hover:text-zinc-50">
-                  <Link href="/dashboard">Overview</Link>
+                  <Link href="/dashboard">Home</Link>
                 </Button>
                 <Button asChild variant="ghost" className="w-full justify-start text-zinc-300 hover:bg-white/5 hover:text-zinc-50">
                   <Link href="/dashboard/history">History</Link>
@@ -59,6 +60,10 @@ export default async function DashboardLayout({
                   <Link href="/dashboard/billing">Billing</Link>
                 </Button>
               </nav>
+
+              <div className="mt-4">
+                <SignOutButton />
+              </div>
             </CardContent>
           </Card>
         </div>

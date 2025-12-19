@@ -19,7 +19,6 @@ type NamesHistoryResponse = {
     tone: string;
     keywords: string | null;
     createdAt: string;
-    isFavorite: boolean;
   }>;
 };
 
@@ -93,7 +92,7 @@ export default function HistoryPage() {
                     </div>
                     <div className="shrink-0 flex items-center gap-2">
                       <div className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-xs text-zinc-300">
-                        {item.isFavorite ? "Favorite" : "Saved"}
+                        Saved
                       </div>
                       <Button
                         type="button"

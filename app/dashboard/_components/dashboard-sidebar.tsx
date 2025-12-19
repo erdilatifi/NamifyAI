@@ -37,7 +37,7 @@ export default function DashboardSidebar({ email }: { email: string }) {
   });
 
   const items = [
-    { href: "/dashboard", label: "Overview" },
+    { href: "/dashboard", label: "Home" },
     { href: "/dashboard/history", label: "History" },
     { href: "/dashboard/generate", label: "Generate" },
     { href: "/dashboard/billing", label: "Billing" },
