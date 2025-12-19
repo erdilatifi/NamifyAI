@@ -146,7 +146,7 @@ export default function Navbar() {
                 <Button asChild variant="ghost" className="text-zinc-200 hover:bg-white/10 hover:text-zinc-50">
                   <Link href="/login">Log in</Link>
                 </Button>
-                <Button asChild className="bg-[#2b0a3d] text-white hover:bg-[#3a0f55]">
+                <Button asChild className="bg-[#6d28d9] text-white hover:bg-[#7c3aed]">
                   <Link href="/register">Start free</Link>
                 </Button>
               </>
@@ -159,6 +159,7 @@ export default function Navbar() {
             <div className="flex flex-col gap-3 pt-4">
               <Link
                 href="/"
+                onClick={() => setMobileMenuOpen(false)}
                 className={
                   isActive("/")
                     ? "text-sm font-semibold text-zinc-50"
@@ -169,12 +170,14 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/#pricing"
+                onClick={() => setMobileMenuOpen(false)}
                 className="text-sm font-semibold text-zinc-300 hover:text-zinc-50"
               >
                 Pricing
               </Link>
               <Link
                 href="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
                 className={
                   pathname.startsWith("/dashboard")
                     ? "text-sm font-semibold text-zinc-50"
@@ -207,10 +210,14 @@ export default function Navbar() {
                       variant="ghost"
                       className="w-full text-zinc-200 hover:bg-white/10 hover:text-zinc-50"
                     >
-                      <Link href="/login">Log in</Link>
+                      <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                        Log in
+                      </Link>
                     </Button>
-                    <Button asChild className="w-full bg-[#2b0a3d] text-white hover:bg-[#3a0f55]">
-                      <Link href="/register">Start free</Link>
+                    <Button asChild className="w-full bg-[#6d28d9] text-white hover:bg-[#7c3aed]">
+                      <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                        Start free
+                      </Link>
                     </Button>
                   </div>
                 )}

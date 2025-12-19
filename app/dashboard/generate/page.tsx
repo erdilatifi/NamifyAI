@@ -289,7 +289,8 @@ export default function GeneratePage() {
                 type="button"
                 variant="outline"
                 disabled={generateMutation.isPending}
-                className="w-[10%] border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
+                aria-label="Reset form"
+                className="h-11 w-11 shrink-0 border-white/15 bg-white/[0.04] p-0 text-zinc-50 hover:bg-white/10"
                 onClick={() => {
                   setDescription("");
                   setIndustry("");
@@ -317,7 +318,7 @@ export default function GeneratePage() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="h-4 w-4"
+                  className="h-4 w-4 shrink-0"
                   aria-hidden="true"
                 >
                   <path d="M21 12a9 9 0 1 1-3-6.7" />

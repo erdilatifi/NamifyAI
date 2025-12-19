@@ -82,15 +82,15 @@ export default function HistoryPage() {
             <div className="space-y-3">
               {namesQuery.data.items.map((item) => (
                 <div key={item.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-zinc-50">{item.name}</div>
-                      <div className="mt-1 line-clamp-2 text-sm text-zinc-300">{item.description}</div>
+                      <div className="break-words text-sm font-semibold text-zinc-50">{item.name}</div>
+                      <div className="mt-1 break-words text-sm text-zinc-300">{item.description}</div>
                       <div className="mt-2 text-xs text-zinc-400">
                         {new Date(item.createdAt).toLocaleString()} · {item.industry} · {item.tone}
                       </div>
                     </div>
-                    <div className="shrink-0 flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                       <div className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-xs text-zinc-300">
                         Saved
                       </div>

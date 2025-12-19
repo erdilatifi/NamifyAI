@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 
 /* ---------------- animation presets ---------------- */
 
@@ -22,17 +22,6 @@ const item = {
     transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
   },
 };
-
-/* ---------------- small UI helpers ---------------- */
-
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-zinc-300 backdrop-blur">
-      <Sparkles className="h-3.5 w-3.5 text-indigo-300" />
-      {children}
-    </div>
-  );
-}
 
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
@@ -75,10 +64,6 @@ export default function Home() {
               animate="show"
               className="mx-auto max-w-3xl text-center"
             >
-              <motion.div variants={item}>
-                <Badge>Premium AI naming for modern founders</Badge>
-              </motion.div>
-
               <motion.h1
                 variants={item}
                 className="mt-8 text-balance text-5xl font-semibold tracking-[-0.03em] sm:text-7xl"
@@ -258,7 +243,7 @@ export default function Home() {
                   <Bullet>Dedicated support</Bullet>
                 </div>
                 <Link
-                  href="mailto:sales@namifyai.com"
+                  href=""
                   className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-md border border-white/12 bg-white/5 text-sm transition hover:bg-white/10"
                 >
                   Contact sales
