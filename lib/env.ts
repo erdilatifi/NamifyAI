@@ -13,6 +13,7 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1).optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_FROM: z.string().min(1).optional(),
 
   OPENAI_API_KEY: z.string().min(1).optional(),
 
@@ -29,6 +30,7 @@ const parsed = envSchema.parse({
   GOOGLE_CLIENT_ID: emptyToUndefined(process.env.GOOGLE_CLIENT_ID),
   GOOGLE_CLIENT_SECRET: emptyToUndefined(process.env.GOOGLE_CLIENT_SECRET),
   RESEND_API_KEY: emptyToUndefined(process.env.RESEND_API_KEY),
+  RESEND_FROM: emptyToUndefined(process.env.RESEND_FROM),
   OPENAI_API_KEY: emptyToUndefined(process.env.OPENAI_API_KEY),
   STRIPE_SECRET_KEY: emptyToUndefined(process.env.STRIPE_SECRET_KEY),
   STRIPE_WEBHOOK_SECRET: emptyToUndefined(process.env.STRIPE_WEBHOOK_SECRET),

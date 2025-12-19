@@ -73,12 +73,21 @@ export async function POST(req: Request) {
     const { Resend } = await import("resend");
     const resend = new Resend(env.RESEND_API_KEY);
 
-    await resend.emails.send({
-      from: "NamifyAI <no-reply@namifyai.local>",
-      to: email,
-      subject: "Reset your password",
-      text: `Reset your password using this link (valid for 30 minutes):\n\n${resetUrl}`,
-    });
+    const from = env.RESEND_FROM ?? "NamifyAI <onboarding@resend.dev>";
+    try {
+      await resend.emails.send({
+        from,
+        to: email,
+        subject: "Reset your password",
+        text: `Reset your password using this link (valid for 30 minutes):\n\n${resetUrl}`,
+      });
+    } catch (err) {
+      console.error("[forgot-password] Failed to send reset email via Resend", {
+        email,
+        from,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   } else {
     console.log("[forgot-password] RESEND_API_KEY not set. Reset URL:", resetUrl);
   }
