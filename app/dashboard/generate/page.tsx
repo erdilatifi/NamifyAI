@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
-const NASS_CORPORATE_REGISTRATIONS_URL = "https://www.nass.org/business-services/corporate-registrations";
+const NASS_CORPORATE_REGISTRATIONS_URL = "https://www.nass.org/business-services/corporate-registration";
 
 type GenerateInput = {
   description: string;
@@ -41,9 +41,14 @@ type Generated = {
   replacedBecauseTaken?: boolean;
   isExistingBusinessName?: boolean;
   tagline?: string;
-  domains?: Array<{ fqdn: string; status: "taken" | "likely_available" }>;
+  domains?: Array<{ fqdn: string; status: "taken" | "likely_available" | "unknown" }>;
   availableDomains?: string[];
 };
+
+function buildManualDomainCheckUrl(fqdn: string) {
+  const encoded = encodeURIComponent(fqdn);
+  return `https://www.namecheap.com/domains/registration/results/?domain=${encoded}`;
+}
 
 export default function GeneratePage() {
   const [description, setDescription] = useState("");
@@ -388,6 +393,21 @@ export default function GeneratePage() {
                         rel="noreferrer"
                       >
                         Check business registration
+                      </a>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="border-white/15 bg-white/[0.04] text-zinc-50 hover:bg-white/10"
+                      disabled={!(r.availableDomains?.[0] || r.domains?.[0]?.fqdn)}
+                    >
+                      <a
+                        href={buildManualDomainCheckUrl((r.availableDomains?.[0] || r.domains?.find((d) => d.status !== "taken")?.fqdn) as string)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Check domain manually
                       </a>
                     </Button>
                     <Button

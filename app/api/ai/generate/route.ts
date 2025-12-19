@@ -110,16 +110,49 @@ async function resolvesAnyRecord(hostname: string) {
   }
 }
 
+async function rdapHasDomainRegistration(fqdn: string) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 2500);
+  try {
+    const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(fqdn)}`,
+      {
+        method: "GET",
+        signal: controller.signal,
+        headers: {
+          "accept": "application/rdap+json, application/json;q=0.9, */*;q=0.8",
+        },
+      }
+    );
+
+    if (res.status === 404) return false;
+    if (res.ok) return true;
+
+    return null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 async function checkDomains(baseLabel: string) {
   const tlds = [".com", ".ai", ".io", ".co", ".app"] as const;
   const fqdnList = tlds.map((tld) => `${baseLabel}${tld}`);
 
   const results = await Promise.all(
     fqdnList.map(async (fqdn) => {
+      const rdap = await rdapHasDomainRegistration(fqdn);
+      if (rdap === true) {
+        return { fqdn, status: "taken" as const };
+      }
+      if (rdap === false) {
+        return { fqdn, status: "likely_available" as const };
+      }
+
       const hasDns = await resolvesAnyRecord(fqdn);
       return {
         fqdn,
-        status: hasDns ? ("taken" as const) : ("likely_available" as const),
+        status: hasDns ? ("taken" as const) : ("unknown" as const),
       };
     })
   );
