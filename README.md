@@ -6,7 +6,7 @@ NamifyAI is a Next.js app for generating brandable business names, saving favori
 
 ### Demo video
 
-[Watch the demo (Google Drive)](https://drive.google.com/file/d/your-share-link-here/view?usp=sharing)
+[Watch the demo (Google Drive)](https://drive.google.com/file/d/1QfZpck47MqqNbtTA7q5kfgVQPiSAWX6_/view?usp=sharing)
 
 ### Tech stack
 
