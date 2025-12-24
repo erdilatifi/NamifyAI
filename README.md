@@ -2,13 +2,19 @@
 
 NamifyAI is a Next.js app for generating brandable business names, saving favorites, and managing usage/billing.
 
+![NamifyAI Poster](./public/namifyPoster.png)
+
+### Demo video
+
+[Watch the demo (Google Drive)](https://drive.google.com/file/d/your-share-link-here/view?usp=sharing)
+
 ### Tech stack
 
 - **Frontend**
   - Next.js (App Router)
   - React
   - Tailwind CSS
-  - Radix UI primitives
+  - shadcn/ui-style components 
   - TanStack React Query (client data fetching)
   - Framer Motion (marketing animations)
 
